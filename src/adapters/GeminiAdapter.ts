@@ -8,10 +8,6 @@ export class GeminiAdapter extends BaseAdapter {
 	capabilities: AdapterCapabilities = {
 		agentsFolderSupport: "partial",
 		unsupportedFeatures: ["mcp"],
-		customNames: {
-			folder: ".agents",
-			mcpFile: "mcp.json",
-		},
 	};
 
 	generate(config: AdapterConfig): void {
@@ -24,7 +20,7 @@ export class GeminiAdapter extends BaseAdapter {
 		if (config.slashCommands && config.slashCommands.length > 0) {
 			customInstructions += "\n\nAvailable Slash Commands:\n";
 			for (const cmd of config.slashCommands) {
-				customInstructions += `- /${cmd.command}: ${cmd.description}\n`;
+				customInstructions += `- /${cmd.name}: ${cmd.description}\n`;
 			}
 		}
 
@@ -49,7 +45,6 @@ export class GeminiAdapter extends BaseAdapter {
 					fs.copyFileSync(srcFile, destFile);
 				}
 			}
-			this.updateGitignore(config.targetPath, path.join(".agents", "skills"));
 		}
 
 		if (Object.keys(config.mcpServers).length > 0) {
@@ -63,6 +58,6 @@ export class GeminiAdapter extends BaseAdapter {
 		}
 
 		this.updateGitignore(config.targetPath, ".agents");
-		console.log(chalk.green(`✓ Generated Gemini config at ${agentsDir}`));
+		console.log(chalk.green(`✓ Generated Gemini config at ${config.targetPath}`));
 	}
 }

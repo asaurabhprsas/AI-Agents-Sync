@@ -18,7 +18,7 @@ export class CursorAdapter extends BaseAdapter {
 		if (config.slashCommands && config.slashCommands.length > 0) {
 			content += "\n\nAvailable Slash Commands:\n";
 			for (const cmd of config.slashCommands) {
-				content += `- /${cmd.command}: ${cmd.description}\n`;
+				content += `- /${cmd.name}: ${cmd.description}\n`;
 			}
 		}
 

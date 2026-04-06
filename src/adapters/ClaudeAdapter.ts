@@ -19,7 +19,7 @@ export class ClaudeAdapter extends BaseAdapter {
 		if (config.slashCommands && config.slashCommands.length > 0) {
 			customInstructions += "\n\nAvailable Slash Commands:\n";
 			for (const cmd of config.slashCommands) {
-				customInstructions += `- /${cmd.command}: ${cmd.description}\n`;
+				customInstructions += `- /${cmd.name}: ${cmd.description}\n`;
 			}
 		}
 
