@@ -7,8 +7,15 @@ import { BaseAdapter } from "./BaseAdapter.js";
 export class GeminiAdapter extends BaseAdapter {
 	generate(config: AdapterConfig): void {
 		const agentsDir = path.join(config.targetPath, ".agents");
-		const customInstructions =
+		let customInstructions =
 			`${config.basePersona}\n\n${config.rulesContent}`.trim();
+
+		if (config.slashCommands.length > 0) {
+			customInstructions += "\n\nAvailable Slash Commands:\n";
+			for (const cmd of config.slashCommands) {
+				customInstructions += `- /${cmd.command}: ${cmd.description}\n`;
+			}
+		}
 
 		fs.mkdirSync(agentsDir, { recursive: true });
 

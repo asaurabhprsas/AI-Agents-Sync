@@ -8,7 +8,14 @@ export class CursorAdapter extends BaseAdapter {
 	generate(config: AdapterConfig): void {
 		const outputPath = path.join(config.targetPath, ".cursorrules");
 
-		const content = `${config.basePersona}\n\n${config.rulesContent}`.trim();
+		let content = `${config.basePersona}\n\n${config.rulesContent}`.trim();
+
+		if (config.slashCommands.length > 0) {
+			content += "\n\nAvailable Slash Commands:\n";
+			for (const cmd of config.slashCommands) {
+				content += `- /${cmd.command}: ${cmd.description}\n`;
+			}
+		}
 
 		fs.mkdirSync(config.targetPath, { recursive: true });
 		fs.writeFileSync(outputPath, content, "utf-8");
