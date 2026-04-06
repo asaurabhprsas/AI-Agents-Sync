@@ -19,6 +19,7 @@ describe("ClaudeAdapter", () => {
 			rulesContent: "- Always write tests.",
 			mcpServers: { testServer: { command: "test" } },
 			slashCommands: [],
+			skills: [],
 		});
 
 		const expectedPath = path.join("/mock/path", ".claude.json");
@@ -34,5 +35,11 @@ describe("ClaudeAdapter", () => {
 			expect.stringContaining('"testServer"'),
 			"utf-8",
 		);
+	});
+
+	it("reports no .agents support", () => {
+		const adapter = new ClaudeAdapter();
+		expect(adapter.capabilities.agentsFolderSupport).toBe("none");
+		expect(adapter.capabilities.unsupportedFeatures).toContain("agents");
 	});
 });

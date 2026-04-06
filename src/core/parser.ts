@@ -11,21 +11,38 @@ export async function loadConfig(cwd: string): Promise<SyncConfig> {
 		".ai-agents-sync",
 		"sync.config.js",
 	);
+	const jsonConfigPath = path.join(cwd, ".ai-agents-sync", "sync.config.json");
 
-	if (!fs.existsSync(configPath) && !fs.existsSync(compiledConfigPath)) {
+	if (
+		!fs.existsSync(configPath) &&
+		!fs.existsSync(compiledConfigPath) &&
+		!fs.existsSync(jsonConfigPath)
+	) {
 		console.error(
 			chalk.red(
-				`Error: Config file not found at ${configPath} or ${compiledConfigPath}`,
+				`Error: Config file not found at ${configPath} or ${compiledConfigPath} or ${jsonConfigPath}`,
 			),
 		);
 		process.exit(1);
 	}
 
-	const targetPath = fs.existsSync(compiledConfigPath)
-		? compiledConfigPath
-		: configPath;
+	let targetPath: string;
+	if (fs.existsSync(jsonConfigPath)) {
+		targetPath = jsonConfigPath;
+	} else if (fs.existsSync(compiledConfigPath)) {
+		targetPath = compiledConfigPath;
+	} else {
+		targetPath = configPath;
+	}
 
 	try {
+		if (targetPath.endsWith(".json")) {
+			const content = fs.readFileSync(targetPath, "utf-8");
+			const rawConfig = JSON.parse(content);
+			const parsed = SyncConfigSchema.parse(rawConfig);
+			return parsed;
+		}
+
 		const module = await import(pathToFileURL(targetPath).href);
 		const rawConfig = module.default || module.config;
 

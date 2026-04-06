@@ -19,6 +19,7 @@ describe("CursorAdapter", () => {
 			rulesContent: "- Do not break code.",
 			mcpServers: {},
 			slashCommands: [],
+			skills: [],
 		});
 
 		const expectedPath = path.join("/mock/path", ".cursorrules");
@@ -27,5 +28,11 @@ describe("CursorAdapter", () => {
 			"You are Cursor.\n\n- Do not break code.",
 			"utf-8",
 		);
+	});
+
+	it("reports no .agents support", () => {
+		const adapter = new CursorAdapter();
+		expect(adapter.capabilities.agentsFolderSupport).toBe("none");
+		expect(adapter.capabilities.unsupportedFeatures).toContain("agents");
 	});
 });

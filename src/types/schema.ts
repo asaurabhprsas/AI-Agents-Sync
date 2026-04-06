@@ -18,7 +18,7 @@ export type AgentTarget = z.infer<typeof AgentTargetSchema>;
 export type SyncConfig = z.infer<typeof SyncConfigSchema>;
 
 export interface SlashCommand {
-	name: string;
+	command: string;
 	description: string;
 	content: string;
 }
@@ -30,7 +30,7 @@ export interface AdapterConfig {
 	rulesContent: string;
 	mcpServers: Record<string, unknown>;
 	slashCommands: SlashCommand[];
-	skills: { name: string; path: string }[];
+	skills?: { name: string; path: string }[];
 }
 
 export type AgentsFolderSupport = "full" | "partial" | "none";

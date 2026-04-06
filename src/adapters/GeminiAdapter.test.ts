@@ -10,7 +10,7 @@ describe("GeminiAdapter", () => {
 		vi.restoreAllMocks();
 	});
 
-	it("generates .agents structure for Gemini", () => {
+	it("generates .agents structure for Gemini with MCP outside", () => {
 		const adapter = new GeminiAdapter();
 		adapter.generate({
 			agentName: "gemini",
@@ -19,6 +19,7 @@ describe("GeminiAdapter", () => {
 			rulesContent: "- Be helpful.",
 			mcpServers: { server1: {} },
 			slashCommands: [],
+			skills: [],
 		});
 
 		const agentsPath = path.join("/mock/path", ".agents");
@@ -29,9 +30,15 @@ describe("GeminiAdapter", () => {
 			"utf-8",
 		);
 		expect(fs.writeFileSync).toHaveBeenCalledWith(
-			path.join(agentsPath, "mcp.json"),
+			path.join("/mock/path", "mcp.json"),
 			expect.stringContaining('"server1"'),
 			"utf-8",
 		);
+	});
+
+	it("reports full capabilities", () => {
+		const adapter = new GeminiAdapter();
+		expect(adapter.capabilities.agentsFolderSupport).toBe("partial");
+		expect(adapter.capabilities.unsupportedFeatures).toContain("mcp");
 	});
 });

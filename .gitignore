@@ -3,3 +3,4 @@ dist
 .env.agent
 .ai-agents-sync
 .demo-structure-output
+.worktrees

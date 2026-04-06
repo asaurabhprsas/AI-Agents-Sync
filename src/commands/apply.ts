@@ -8,7 +8,7 @@ import { GeminiAdapter } from "../adapters/GeminiAdapter.js";
 import { injectEnvVars } from "../core/env-injector.js";
 import { loadConfig } from "../core/parser.js";
 
-import type { AgentTarget } from "../types/schema.js";
+import type { AgentTarget, SlashCommand } from "../types/schema.js";
 
 function getAdapter(agentName: string) {
 	switch (agentName.toLowerCase()) {
@@ -23,11 +23,64 @@ function getAdapter(agentName: string) {
 	}
 }
 
+function loadSlashCommands(syncDir: string): SlashCommand[] {
+	const commandsDir = path.join(syncDir, "slash-commands");
+	if (!fs.existsSync(commandsDir)) {
+		return [];
+	}
+
+	const commands: SlashCommand[] = [];
+	const files = fs.readdirSync(commandsDir).filter((f) => f.endsWith(".md"));
+
+	for (const file of files) {
+		const filePath = path.join(commandsDir, file);
+		const content = fs.readFileSync(filePath, "utf-8");
+		const commandName = file.replace(".md", "");
+
+		const descriptionMatch = content.match(/^#\s*(.+?)(?:\n|$)/);
+		const description = descriptionMatch
+			? descriptionMatch[1]
+			: `/${commandName}`;
+
+		commands.push({
+			command: commandName,
+			description: description.trim(),
+			content: content,
+		});
+	}
+
+	return commands;
+}
+
+function loadSkills(syncDir: string): { name: string; path: string }[] {
+	const skillsDir = path.join(syncDir, "skills");
+	if (!fs.existsSync(skillsDir)) {
+		return [];
+	}
+
+	const skills: { name: string; path: string }[] = [];
+	const entries = fs.readdirSync(skillsDir, { withFileTypes: true });
+
+	for (const entry of entries) {
+		if (entry.isDirectory()) {
+			skills.push({
+				name: entry.name,
+				path: path.join(skillsDir, entry.name),
+			});
+		}
+	}
+
+	return skills;
+}
+
 export async function applyCommand(agents: string[]) {
 	const cwd = process.cwd();
 	const syncDir = path.join(cwd, ".ai-agents-sync");
 
 	const config = await loadConfig(cwd);
+
+	const slashCommands = loadSlashCommands(syncDir);
+	const skills = loadSkills(syncDir);
 
 	let selectedAgents = agents;
 	if (agents.length === 0) {
@@ -54,12 +107,12 @@ export async function applyCommand(agents: string[]) {
 		selectedAgents = choice as string[];
 	}
 
-	const commonAgentsPath = path.join(syncDir, "common-agents.md");
+	const commonAgentsPath = path.join(syncDir, "agents-md", "common-agents.md");
 	const commonAgents = fs.existsSync(commonAgentsPath)
 		? fs.readFileSync(commonAgentsPath, "utf-8")
 		: "";
 
-	const mainAgentsPath = path.join(syncDir, "main-agents.md");
+	const mainAgentsPath = path.join(syncDir, "agents-md", "main-agents.md");
 	const mainAgents = fs.existsSync(mainAgentsPath)
 		? fs.readFileSync(mainAgentsPath, "utf-8")
 		: "";
@@ -119,7 +172,8 @@ export async function applyCommand(agents: string[]) {
 				basePersona,
 				rulesContent,
 				mcpServers: filteredMcps,
-				slashCommands: rulesConfig.slashCommands || [],
+				slashCommands: slashCommands,
+				skills: skills,
 			});
 		}
 	};
@@ -134,7 +188,7 @@ export async function applyCommand(agents: string[]) {
 	console.log(chalk.blue("Processing workspace targets..."));
 	for (const [wsPath, wsDef] of Object.entries(config.workspaces)) {
 		const wsName = path.basename(wsPath);
-		const wsAgentFile = path.join(syncDir, `${wsName}-agents.md`);
+		const wsAgentFile = path.join(syncDir, "agents-md", `${wsName}-agents.md`);
 		const wsPersona = fs.existsSync(wsAgentFile)
 			? `${commonAgents}\n\n${fs.readFileSync(wsAgentFile, "utf-8")}`.trim()
 			: commonAgents;

@@ -16,8 +16,9 @@ program
 program
 	.command("init")
 	.description("Scaffold the .ai-agents-sync directory")
-	.action(() => {
-		initCommand();
+	.option("-u, --update", "Update existing configuration")
+	.action(async (options) => {
+		await initCommand(options);
 	});
 
 program
