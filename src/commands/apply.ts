@@ -8,6 +8,8 @@ import { GeminiAdapter } from "../adapters/GeminiAdapter.js";
 import { injectEnvVars } from "../core/env-injector.js";
 import { loadConfig } from "../core/parser.js";
 
+import { askAgentSelection } from "../core/interactive.js";
+
 import type { AgentTarget, SlashCommand } from "../types/schema.js";
 
 function getAdapter(agentName: string) {
@@ -43,7 +45,7 @@ function loadSlashCommands(syncDir: string): SlashCommand[] {
 			: `/${commandName}`;
 
 		commands.push({
-			command: commandName,
+			name: commandName,
 			description: description.trim(),
 			content: content,
 		});
@@ -95,16 +97,7 @@ export async function applyCommand(agents: string[]) {
 			return;
 		}
 
-		const choice = await p.multiselect({
-			message: "Select agents to sync:",
-			options: Array.from(availableAgents).map((a) => ({ value: a, label: a })),
-		});
-
-		if (p.isCancel(choice)) {
-			p.cancel("Operation cancelled.");
-			process.exit(0);
-		}
-		selectedAgents = choice as string[];
+		selectedAgents = await askAgentSelection(Array.from(availableAgents));
 	}
 
 	const commonAgentsPath = path.join(syncDir, "agents-md", "common-agents.md");
