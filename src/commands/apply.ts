@@ -8,7 +8,7 @@ import { GeminiAdapter } from "../adapters/GeminiAdapter.js";
 import { injectEnvVars } from "../core/env-injector.js";
 import { loadConfig } from "../core/parser.js";
 
-import type { AgentTarget, SyncConfig } from "../types/schema.js";
+import type { AgentTarget } from "../types/schema.js";
 
 function getAdapter(agentName: string) {
 	switch (agentName.toLowerCase()) {

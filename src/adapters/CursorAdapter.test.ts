@@ -18,6 +18,7 @@ describe("CursorAdapter", () => {
 			basePersona: "You are Cursor.",
 			rulesContent: "- Do not break code.",
 			mcpServers: {},
+			slashCommands: [],
 		});
 
 		const expectedPath = path.join("/mock/path", ".cursorrules");

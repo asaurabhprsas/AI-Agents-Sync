@@ -18,6 +18,7 @@ describe("ClaudeAdapter", () => {
 			basePersona: "You are a helpful assistant.",
 			rulesContent: "- Always write tests.",
 			mcpServers: { testServer: { command: "test" } },
+			slashCommands: [],
 		});
 
 		const expectedPath = path.join("/mock/path", ".claude.json");

@@ -18,6 +18,7 @@ describe("GeminiAdapter", () => {
 			basePersona: "You are Gemini.",
 			rulesContent: "- Be helpful.",
 			mcpServers: { server1: {} },
+			slashCommands: [],
 		});
 
 		const agentsPath = path.join("/mock/path", ".agents");
