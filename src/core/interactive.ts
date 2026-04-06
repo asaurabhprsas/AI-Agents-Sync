@@ -12,10 +12,7 @@ export async function askAgentSelection(availableAgents: string[]) {
 	return choice as string[];
 }
 
-export async function askInitConfig(existingConfig?: {
-	mergeCommonWithMain?: boolean;
-	root?: Record<string, unknown>;
-}) {
+export async function askInitConfig(existingConfig?: any) {
 	const group = await p.group(
 		{
 			agents: () =>
@@ -26,9 +23,7 @@ export async function askInitConfig(existingConfig?: {
 						{ value: "claude", label: "Claude" },
 						{ value: "gemini", label: "Gemini" },
 					],
-					initialValues: existingConfig
-						? Object.keys(existingConfig.root || {})
-						: [],
+					initialValues: existingConfig ? Object.keys(existingConfig.root) : [],
 				}),
 			mergeCommon: () =>
 				p.confirm({
