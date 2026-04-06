@@ -7,8 +7,11 @@ export const AgentTargetSchema = z.object({
 
 export const SyncConfigSchema = z.object({
 	globalSettings: z.string().optional().default("AGENTS.md"),
-	root: z.record(AgentTargetSchema).optional().default({}),
-	workspaces: z.record(z.record(AgentTargetSchema)).optional().default({}),
+	root: z.record(z.string(), AgentTargetSchema).optional().default({}),
+	workspaces: z
+		.record(z.string(), z.record(z.string(), AgentTargetSchema))
+		.optional()
+		.default({}),
 });
 
 export type AgentTarget = z.infer<typeof AgentTargetSchema>;
@@ -19,5 +22,5 @@ export interface AdapterConfig {
 	targetPath: string;
 	basePersona: string;
 	rulesContent: string;
-	mcpServers: Record<string, any>;
+	mcpServers: Record<string, unknown>;
 }

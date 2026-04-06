@@ -41,7 +41,7 @@ This creates:
 
 ### 2. Configure
 
-Edit `.ai-agents-sync/sync.config.js` to define which agents get which rules:
+Edit `.ai-agents-sync/sync.config.js` to define which agents get which rules. The `root` object handles your main project directory, and `workspaces` handles your sub-packages.
 
 ```javascript
 export default {
@@ -52,11 +52,30 @@ export default {
   },
   workspaces: {
     'apps/web': {
-      cursor: { rules: ['frontend-rules.md'], mcpServers: [] }
+      cursor: { rules: ['frontend-rules.md'], mcpServers: [] },
+      gemini: { rules: ['frontend-rules.md'], mcpServers: [] }
+    },
+    'packages/shared': {
+       cursor: { rules: ['library-rules.md'], mcpServers: [] }
     }
   }
 };
 ```
+
+## 📦 Monorepo Setup (pnpm/Yarn/Lerna)
+
+AIAgentsSync is designed with monorepos in mind. It allows you to:
+1.  **Avoid Token Bloat**: Send only package-specific rules to the AI agent based on the workspace path.
+2.  **Centralized Personas**: Keep a single `AGENTS.md` persona at the root, while varying technical rules per package.
+3.  **Local Context**: AI agents operating inside `apps/web` will automatically see the generated `.cursorrules` or `.claude.json` specific to that directory.
+
+### Workspace Syncing
+
+When you run `agentsync apply`, the tool:
+1. Reads the `workspaces` object.
+2. Resolves relative paths (e.g., `apps/web`).
+3. Automatically creates the target folders if they don't exist.
+4. Distributes the concatenated rules and filtered MCPs to that specific folder.
 
 ### 3. Sync
 

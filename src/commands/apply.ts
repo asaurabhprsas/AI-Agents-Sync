@@ -7,6 +7,8 @@ import { GeminiAdapter } from "../adapters/GeminiAdapter.js";
 import { injectEnvVars } from "../core/env-injector.js";
 import { loadConfig } from "../core/parser.js";
 
+import type { AgentTarget } from "../types/schema.js";
+
 function getAdapter(agentName: string) {
 	switch (agentName.toLowerCase()) {
 		case "claude":
@@ -38,7 +40,10 @@ export async function applyCommand(agents: string[]) {
 	const injectedMcpContent = injectEnvVars(rawMcpContent);
 	const fullMcpConfig = JSON.parse(injectedMcpContent);
 
-	const processTarget = (targetDef: any, targetPath: string) => {
+	const processTarget = (
+		targetDef: Record<string, AgentTarget>,
+		targetPath: string,
+	) => {
 		for (const [agentName, agentConfig] of Object.entries(targetDef)) {
 			if (agents.length > 0 && !agents.includes(agentName)) continue;
 
@@ -50,10 +55,7 @@ export async function applyCommand(agents: string[]) {
 				continue;
 			}
 
-			const rulesConfig = agentConfig as {
-				rules: string[];
-				mcpServers: string[];
-			};
+			const rulesConfig = agentConfig;
 			let rulesContent = "";
 			for (const ruleFile of rulesConfig.rules) {
 				const rulePath = path.join(syncDir, "rules", ruleFile);
@@ -66,7 +68,7 @@ export async function applyCommand(agents: string[]) {
 				}
 			}
 
-			const filteredMcps: Record<string, any> = {};
+			const filteredMcps: Record<string, unknown> = {};
 			const allMcps = fullMcpConfig.mcpServers || {};
 			for (const srv of rulesConfig.mcpServers) {
 				if (allMcps[srv]) {
