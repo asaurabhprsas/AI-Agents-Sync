@@ -9,9 +9,12 @@ AIAgentsSync is a Node.js CLI tool that acts as a central "source of truth" for 
 ## ✨ Features
 
 - **Adapter Pattern**: Generates native config formats for various agents (`.cursorrules`, `.claude.json`, `.agents/`).
+- **Interactive CLI**: Multi-select agents to sync using a modern terminal UI.
 - **Workspace Support**: Distribute different rule sets to specific packages in a monorepo.
+- **Persona Merging**: Combine global personas with package-specific instructions.
+- **Slash Commands**: Define custom `/command` descriptions for your agents.
 - **Environment Injection**: Dynamically inject secrets into MCP configs using `${VAR}` syntax and a local `.env.agent` file.
-- **Zod Validation**: Ensures your `sync.config.ts` is always valid.
+- **Zod Validation**: Ensures your configuration is always valid.
 - **Biome Integrated**: Fast linting and formatting.
 
 ## 🛠️ Installation
@@ -34,9 +37,10 @@ agentsync init
 
 This creates:
 - `.ai-agents-sync/sync.config.js`: The master routing configuration.
-- `.ai-agents-sync/AGENTS.md`: Your base persona.
+- `.ai-agents-sync/main-agents.md`: Your root persona.
+- `.ai-agents-sync/common-agents.md`: Common persona for all packages.
 - `.ai-agents-sync/mcp.json`: Global MCP servers list.
-- `.ai-agents-sync/rules/`: Folder for markdown rule sets.
+- `.ai-agents-sync/agents-instruction/`: Folder for markdown rule sets.
 - `.env.agent`: Local secrets (added to `.gitignore` automatically).
 
 ### 2. Configure
@@ -45,9 +49,13 @@ Edit `.ai-agents-sync/sync.config.js` to define which agents get which rules. Th
 
 ```javascript
 export default {
-  globalSettings: 'AGENTS.md',
+  mergeCommonWithMain: true,
   root: {
-    cursor: { rules: ['default-rules.md'], mcpServers: [] },
+    cursor: { 
+      rules: ['default-rules.md'], 
+      mcpServers: [], 
+      slashCommands: [{ command: 'fix', description: 'Fix the bug in current file' }] 
+    },
     claude: { rules: ['default-rules.md'], mcpServers: ['github-mcp'] }
   },
   workspaces: {
@@ -62,32 +70,28 @@ export default {
 };
 ```
 
-## 📦 Monorepo Setup (pnpm/Yarn/Lerna)
-
-AIAgentsSync is designed with monorepos in mind. It allows you to:
-1.  **Avoid Token Bloat**: Send only package-specific rules to the AI agent based on the workspace path.
-2.  **Centralized Personas**: Keep a single `AGENTS.md` persona at the root, while varying technical rules per package.
-3.  **Local Context**: AI agents operating inside `apps/web` will automatically see the generated `.cursorrules` or `.claude.json` specific to that directory.
-
-### Workspace Syncing
-
-When you run `agentsync apply`, the tool:
-1. Reads the `workspaces` object.
-2. Resolves relative paths (e.g., `apps/web`).
-3. Automatically creates the target folders if they don't exist.
-4. Distributes the concatenated rules and filtered MCPs to that specific folder.
+#### Persona Merging Logic
+- **Root**: Uses `main-agents.md`. If `mergeCommonWithMain` is true, it appends `common-agents.md`.
+- **Workspaces**: Uses `common-agents.md`. If a file named `[packageName]-agents.md` exists in `.ai-agents-sync/` (where packageName is the folder name), it appends its content.
 
 ### 3. Sync
 
 Compile and distribute the configurations:
 
 ```bash
-# Sync all agents
+# Sync using interactive multi-select
 agentsync apply
 
-# Sync specific agents
+# Sync specific agents (non-interactive)
 agentsync apply cursor claude
 ```
+
+## 📦 Monorepo Setup (pnpm/Yarn/Lerna)
+
+AIAgentsSync is designed with monorepos in mind. It allows you to:
+1.  **Avoid Token Bloat**: Send only package-specific rules to the AI agent based on the workspace path.
+2.  **Centralized Personas**: Keep a single `common-agents.md` persona at the root, while varying technical rules per package.
+3.  **Local Context**: AI agents operating inside `apps/web` will automatically see the generated `.cursorrules` or `.claude.json` specific to that directory.
 
 ## 🧪 Testing & Development
 
@@ -95,19 +99,14 @@ agentsync apply cursor claude
 # Run tests
 pnpm test
 
-# Lint with Biome
-npx biome check src/
+# Lint & Format
+pnpm run lint
+pnpm run format
+pnpm run check
 
 # Build
 pnpm run build
 ```
-
-## 🏗️ Architecture
-
-- `src/cli.ts`: Entry point.
-- `src/adapters/`: Logic for generating specific agent files.
-- `src/core/`: Parser, Environment Injector, and Workspace logic.
-- `src/types/`: Zod schemas and TypeScript interfaces.
 
 ---
 Built with ❤️ for AI-native development.
