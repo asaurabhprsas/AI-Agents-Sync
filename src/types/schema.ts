@@ -1,14 +1,8 @@
 import { z } from "zod";
 
-export const SlashCommandSchema = z.object({
-	command: z.string(),
-	description: z.string(),
-});
-
 export const AgentTargetSchema = z.object({
 	rules: z.array(z.string()).optional().default([]),
 	mcpServers: z.array(z.string()).optional().default([]),
-	slashCommands: z.array(SlashCommandSchema).optional().default([]),
 });
 
 export const SyncConfigSchema = z.object({
@@ -20,9 +14,14 @@ export const SyncConfigSchema = z.object({
 		.default({}),
 });
 
-export type SlashCommand = z.infer<typeof SlashCommandSchema>;
 export type AgentTarget = z.infer<typeof AgentTargetSchema>;
 export type SyncConfig = z.infer<typeof SyncConfigSchema>;
+
+export interface SlashCommand {
+	name: string;
+	description: string;
+	content: string;
+}
 
 export interface AdapterConfig {
 	agentName: string;
@@ -31,4 +30,19 @@ export interface AdapterConfig {
 	rulesContent: string;
 	mcpServers: Record<string, unknown>;
 	slashCommands: SlashCommand[];
+	skills: { name: string; path: string }[];
+}
+
+export type AgentsFolderSupport = "full" | "partial" | "none";
+
+export interface AdapterCapabilities {
+	agentsFolderSupport: AgentsFolderSupport;
+	unsupportedFeatures: ("mcp" | "skills" | "slash-commands" | "agents")[];
+	customNames?: {
+		folder?: string; // e.g., ".kilocode"
+		mcpFile?: string; // e.g., "mcp-config.json"
+		mcpKey?: string; // e.g., "mcp"
+		skillsFolder?: string;
+		commandsFolder?: string;
+	};
 }
