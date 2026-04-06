@@ -12,7 +12,7 @@ export function initCommand() {
 	}
 
 	fs.mkdirSync(syncDir, { recursive: true });
-	fs.mkdirSync(path.join(syncDir, "rules"), { recursive: true });
+	fs.mkdirSync(path.join(syncDir, "agents-instruction"), { recursive: true });
 	fs.mkdirSync(path.join(syncDir, "skills"), { recursive: true });
 
 	const envAgentPath = path.join(cwd, ".env.agent");
@@ -25,12 +25,17 @@ export function initCommand() {
 	}
 
 	fs.writeFileSync(
-		path.join(syncDir, "AGENTS.md"),
-		"# Base Persona\nYou are an expert developer.\n",
+		path.join(syncDir, "main-agents.md"),
+		"# Root Persona\nYou are an expert developer.\n",
 		"utf-8",
 	);
 	fs.writeFileSync(
-		path.join(syncDir, "rules", "default-rules.md"),
+		path.join(syncDir, "common-agents.md"),
+		"# Common Rules\n- Use ESM.\n- Use TypeScript.\n",
+		"utf-8",
+	);
+	fs.writeFileSync(
+		path.join(syncDir, "agents-instruction", "default-rules.md"),
 		"- Write clean code.\n- Add tests.\n",
 		"utf-8",
 	);
@@ -42,10 +47,10 @@ export function initCommand() {
 
 	const configContent = `
 export default {
-  globalSettings: 'AGENTS.md',
+  mergeCommonWithMain: false,
   root: {
-    cursor: { rules: ['default-rules.md'], mcpServers: [] },
-    claude: { rules: ['default-rules.md'], mcpServers: [] }
+    cursor: { rules: ['default-rules.md'], mcpServers: [], slashCommands: [] },
+    claude: { rules: ['default-rules.md'], mcpServers: [], slashCommands: [] }
   },
   workspaces: {}
 };
