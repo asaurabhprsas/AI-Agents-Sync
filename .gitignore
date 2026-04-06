@@ -2,3 +2,4 @@ node_modules
 dist
 .env.agent
 .ai-agents-sync
+.demo-structure-output
