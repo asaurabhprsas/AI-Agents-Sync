@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import type { AdapterConfig, AdapterCapabilities } from "../types/schema.js";
+import type { AdapterCapabilities, AdapterConfig } from "../types/schema.js";
 
 export abstract class BaseAdapter {
 	abstract capabilities: AdapterCapabilities;

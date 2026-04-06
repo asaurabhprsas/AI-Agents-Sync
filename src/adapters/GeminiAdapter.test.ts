@@ -36,6 +36,30 @@ describe("GeminiAdapter", () => {
 		);
 	});
 
+	it("generates AGENTS.md with slash commands", () => {
+		const adapter = new GeminiAdapter();
+		adapter.generate({
+			agentName: "gemini",
+			targetPath: "/mock/path",
+			basePersona: "You are Gemini.",
+			rulesContent: "- Write tests.",
+			mcpServers: {},
+			slashCommands: [
+				{ name: "refactor", description: "Refactor code", content: "..." },
+			],
+			skills: [],
+		});
+
+		const agentsPath = path.join("/mock/path", ".agents");
+		expect(fs.writeFileSync).toHaveBeenCalledWith(
+			path.join(agentsPath, "AGENTS.md"),
+			expect.stringContaining(
+				"Available Slash Commands:\n- /refactor: Refactor code",
+			),
+			"utf-8",
+		);
+	});
+
 	it("reports full capabilities", () => {
 		const adapter = new GeminiAdapter();
 		expect(adapter.capabilities.agentsFolderSupport).toBe("partial");

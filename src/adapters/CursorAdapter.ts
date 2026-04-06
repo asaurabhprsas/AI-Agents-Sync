@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import chalk from "chalk";
-import type { AdapterConfig, AdapterCapabilities } from "../types/schema.js";
+import type { AdapterCapabilities, AdapterConfig } from "../types/schema.js";
 import { BaseAdapter } from "./BaseAdapter.js";
 
 export class CursorAdapter extends BaseAdapter {

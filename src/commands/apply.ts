@@ -1,14 +1,12 @@
 import fs from "node:fs";
 import path from "node:path";
-import * as p from "@clack/prompts";
 import chalk from "chalk";
 import { ClaudeAdapter } from "../adapters/ClaudeAdapter.js";
 import { CursorAdapter } from "../adapters/CursorAdapter.js";
 import { GeminiAdapter } from "../adapters/GeminiAdapter.js";
 import { injectEnvVars } from "../core/env-injector.js";
-import { loadConfig } from "../core/parser.js";
-
 import { askAgentSelection } from "../core/interactive.js";
+import { loadConfig } from "../core/parser.js";
 
 import type { AgentTarget, SlashCommand } from "../types/schema.js";
 

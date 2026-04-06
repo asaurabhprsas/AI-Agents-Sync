@@ -1,4 +1,5 @@
 import * as p from "@clack/prompts";
+import type { SyncConfig } from "../types/schema.js";
 
 export async function askAgentSelection(availableAgents: string[]) {
 	const choice = await p.multiselect({
@@ -12,7 +13,7 @@ export async function askAgentSelection(availableAgents: string[]) {
 	return choice as string[];
 }
 
-export async function askInitConfig(existingConfig?: any) {
+export async function askInitConfig(existingConfig?: SyncConfig) {
 	const group = await p.group(
 		{
 			agents: () =>

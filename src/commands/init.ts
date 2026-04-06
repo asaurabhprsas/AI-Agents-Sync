@@ -43,9 +43,10 @@ export async function initCommand(options: { update?: boolean } = {}) {
 		const answers = await askInitConfig(existingConfig);
 
 		if (answers.agents && answers.agents.length > 0) {
+			const oldRoot = existingConfig.root || {};
 			existingConfig.root = {};
 			for (const agent of answers.agents) {
-				existingConfig.root[agent] = {
+				existingConfig.root[agent] = oldRoot[agent] || {
 					rules: ["default-rules.md"],
 					mcpServers: [],
 				};

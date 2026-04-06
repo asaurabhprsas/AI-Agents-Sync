@@ -37,6 +37,28 @@ describe("ClaudeAdapter", () => {
 		);
 	});
 
+	it("generates a .claude.json file with slash commands in persona", () => {
+		const adapter = new ClaudeAdapter();
+		adapter.generate({
+			agentName: "claude",
+			targetPath: "/mock/path",
+			basePersona: "You are Claude.",
+			rulesContent: "- Write tests.",
+			mcpServers: {},
+			slashCommands: [
+				{ name: "fix", description: "Fix code", content: "fix fix" },
+			],
+			skills: [],
+		});
+
+		const expectedPath = path.join("/mock/path", ".claude.json");
+		expect(fs.writeFileSync).toHaveBeenCalledWith(
+			expectedPath,
+			expect.stringContaining("Available Slash Commands:\\n- /fix: Fix code"),
+			"utf-8",
+		);
+	});
+
 	it("reports no .agents support", () => {
 		const adapter = new ClaudeAdapter();
 		expect(adapter.capabilities.agentsFolderSupport).toBe("none");

@@ -30,6 +30,28 @@ describe("CursorAdapter", () => {
 		);
 	});
 
+	it("generates a .cursorrules file with slash commands in content", () => {
+		const adapter = new CursorAdapter();
+		adapter.generate({
+			agentName: "cursor",
+			targetPath: "/mock/path",
+			basePersona: "You are Cursor.",
+			rulesContent: "- Do not break code.",
+			mcpServers: {},
+			slashCommands: [
+				{ name: "bug", description: "Fix bug", content: "fix fix" },
+			],
+			skills: [],
+		});
+
+		const expectedPath = path.join("/mock/path", ".cursorrules");
+		expect(fs.writeFileSync).toHaveBeenCalledWith(
+			expectedPath,
+			expect.stringContaining("Available Slash Commands:\n- /bug: Fix bug"),
+			"utf-8",
+		);
+	});
+
 	it("reports no .agents support", () => {
 		const adapter = new CursorAdapter();
 		expect(adapter.capabilities.agentsFolderSupport).toBe("none");
