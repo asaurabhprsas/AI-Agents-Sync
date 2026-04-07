@@ -101,11 +101,11 @@ export async function initCommand(options: { update?: boolean } = {}) {
 		fs.mkdirSync(path.join(syncDir, "slash-commands"), { recursive: true });
 	}
 
-	const envAgentPath = path.join(cwd, ".env.agent");
+	const envAgentPath = path.join(syncDir, ".env.agents");
 	if (!fs.existsSync(envAgentPath)) {
 		fs.writeFileSync(
 			envAgentPath,
-			"# Add your agent secrets here\n# GITHUB_TOKEN=\n",
+			"# Add your agent secrets here\n# DEMO_API_KEY_1=\n# DEMO_API_KEY_2=\n",
 			"utf-8",
 		);
 	}
