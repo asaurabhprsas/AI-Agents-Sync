@@ -6,47 +6,59 @@ import { CursorAdapter } from "./CursorAdapter.js";
 vi.mock("fs");
 
 describe("CursorAdapter", () => {
-	afterEach(() => {
-		vi.restoreAllMocks();
-	});
+	afterEach(() => vi.restoreAllMocks());
 
-	it("generates a .cursorrules file", () => {
-		const adapter = new CursorAdapter();
-		adapter.generate({
+	function makeConfig(overrides = {}) {
+		return {
 			agentName: "cursor",
 			targetPath: "/mock/path",
 			basePersona: "You are Cursor.",
 			rulesContent: "- Do not break code.",
-			mcpServers: {},
+			mcpServers: { cursor_mcp: { command: "run" } },
 			slashCommands: [],
-			skills: [],
-		});
+			skillsSourceDir: "/mock/.ai-agents-sync/skills",
+			writtenFiles: new Set<string>(),
+			...overrides,
+		};
+	}
 
-		const expectedPath = path.join("/mock/path", ".cursorrules");
+	it("generates a .cursorrules file", () => {
+		vi.mocked(fs.existsSync).mockReturnValue(false);
+		const adapter = new CursorAdapter();
+		adapter.generate(makeConfig());
+
 		expect(fs.writeFileSync).toHaveBeenCalledWith(
-			expectedPath,
+			path.join("/mock/path", ".cursorrules"),
 			"You are Cursor.\n\n- Do not break code.",
 			"utf-8",
 		);
 	});
 
-	it("generates a .cursorrules file with slash commands in content", () => {
+	it("writes MCP to .cursor/mcp.json", () => {
+		vi.mocked(fs.existsSync).mockReturnValue(false);
 		const adapter = new CursorAdapter();
-		adapter.generate({
-			agentName: "cursor",
-			targetPath: "/mock/path",
-			basePersona: "You are Cursor.",
-			rulesContent: "- Do not break code.",
-			mcpServers: {},
-			slashCommands: [
-				{ name: "bug", description: "Fix bug", content: "fix fix" },
-			],
-			skills: [],
-		});
+		adapter.generate(makeConfig());
 
-		const expectedPath = path.join("/mock/path", ".cursorrules");
 		expect(fs.writeFileSync).toHaveBeenCalledWith(
-			expectedPath,
+			path.join("/mock/path", ".cursor/mcp.json"),
+			expect.stringContaining('"cursor_mcp"'),
+			"utf-8",
+		);
+	});
+
+	it("generates a .cursorrules file with slash commands in content", () => {
+		vi.mocked(fs.existsSync).mockReturnValue(false);
+		const adapter = new CursorAdapter();
+		adapter.generate(
+			makeConfig({
+				slashCommands: [
+					{ name: "bug", description: "Fix bug", content: "fix fix" },
+				],
+			}),
+		);
+
+		expect(fs.writeFileSync).toHaveBeenCalledWith(
+			path.join("/mock/path", ".cursorrules"),
 			expect.stringContaining("Available Slash Commands:\n- /bug: Fix bug"),
 			"utf-8",
 		);

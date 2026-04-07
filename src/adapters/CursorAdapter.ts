@@ -7,13 +7,14 @@ import { BaseAdapter } from "./BaseAdapter.js";
 export class CursorAdapter extends BaseAdapter {
 	readonly outputFile = ".cursorrules";
 	readonly outputFormat = "text" as const;
-	readonly instructionsKey = ""; // unused for text format
+	readonly instructionsKey = "";
 	readonly mcpKey = "mcpServers";
-	readonly mcpFile = null; // Cursor does not support MCP
+	readonly mcpFile = ".cursor/mcp.json";
 	readonly skillDir = ".cursor/skills";
+	readonly agentDir = ".cursor";
+	readonly gitignoreOutputFile = true;
 	readonly agentsFolderSupport: AgentsFolderSupport = "none";
 	readonly unsupportedFeatures: AdapterCapabilities["unsupportedFeatures"] = [
 		"agents",
-		"mcp",
 	];
 }
