@@ -52,7 +52,7 @@ describe("OpenCodeAdapter", () => {
 			.mocked(fs.writeFileSync)
 			.mock.calls.find(([p]) => String(p).endsWith("opencode.json"));
 		expect(call).toBeDefined();
-		const written = JSON.parse(call![1] as string);
+		const written = JSON.parse(call?.[1] as string);
 		expect(written.theme).toBe("dark");
 		expect(written.model).toBe("gpt-4");
 		expect(written.mcp).toEqual({
@@ -69,7 +69,7 @@ describe("OpenCodeAdapter", () => {
 			.mocked(fs.writeFileSync)
 			.mock.calls.find(([p]) => String(p).endsWith("opencode.json"));
 		expect(call).toBeDefined();
-		const written = JSON.parse(call![1] as string);
+		const written = JSON.parse(call?.[1] as string);
 		expect(written.mcp).toEqual({
 			oc_server: { type: "local", command: "run" },
 		});

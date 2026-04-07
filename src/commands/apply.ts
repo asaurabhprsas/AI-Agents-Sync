@@ -1,13 +1,18 @@
 import fs from "node:fs";
 import path from "node:path";
 import chalk from "chalk";
+import { AntigravityAdapter } from "../adapters/AntigravityAdapter.js";
 import { ClaudeAdapter } from "../adapters/ClaudeAdapter.js";
+import { CopilotAdapter } from "../adapters/CopilotAdapter.js";
 import { CursorAdapter } from "../adapters/CursorAdapter.js";
 import { GeminiAdapter } from "../adapters/GeminiAdapter.js";
+import { KiloCodeAdapter } from "../adapters/KiloCodeAdapter.js";
+import { OpenCodeAdapter } from "../adapters/OpenCodeAdapter.js";
+import { RooCodeAdapter } from "../adapters/RooCodeAdapter.js";
+import { WindsurfAdapter } from "../adapters/WindsurfAdapter.js";
 import { injectEnvVars } from "../core/env-injector.js";
 import { askAgentSelection } from "../core/interactive.js";
 import { loadConfig } from "../core/parser.js";
-
 import type { AgentTarget, SlashCommand } from "../types/schema.js";
 
 function getAdapter(agentName: string) {
@@ -18,6 +23,18 @@ function getAdapter(agentName: string) {
 			return new CursorAdapter();
 		case "gemini":
 			return new GeminiAdapter();
+		case "roocode":
+			return new RooCodeAdapter();
+		case "kilocode":
+			return new KiloCodeAdapter();
+		case "windsurf":
+			return new WindsurfAdapter();
+		case "opencode":
+			return new OpenCodeAdapter();
+		case "antigravity":
+			return new AntigravityAdapter();
+		case "copilot":
+			return new CopilotAdapter();
 		default:
 			return null;
 	}
@@ -52,27 +69,6 @@ function loadSlashCommands(syncDir: string): SlashCommand[] {
 	return commands;
 }
 
-function loadSkills(syncDir: string): { name: string; path: string }[] {
-	const skillsDir = path.join(syncDir, "skills");
-	if (!fs.existsSync(skillsDir)) {
-		return [];
-	}
-
-	const skills: { name: string; path: string }[] = [];
-	const entries = fs.readdirSync(skillsDir, { withFileTypes: true });
-
-	for (const entry of entries) {
-		if (entry.isDirectory()) {
-			skills.push({
-				name: entry.name,
-				path: path.join(skillsDir, entry.name),
-			});
-		}
-	}
-
-	return skills;
-}
-
 export async function applyCommand(agents: string[]) {
 	const cwd = process.cwd();
 	const syncDir = path.join(cwd, ".ai-agents-sync");
@@ -80,7 +76,8 @@ export async function applyCommand(agents: string[]) {
 	const config = await loadConfig(cwd);
 
 	const slashCommands = loadSlashCommands(syncDir);
-	const skills = loadSkills(syncDir);
+	const skillsSourceDir = path.join(syncDir, "skills");
+	const writtenFiles = new Set<string>();
 
 	let selectedAgents = agents;
 	if (agents.length === 0) {
@@ -153,7 +150,8 @@ export async function applyCommand(agents: string[]) {
 				rulesContent,
 				mcpServers: allMcps,
 				slashCommands: slashCommands,
-				skills: skills,
+				skillsSourceDir,
+				writtenFiles,
 			});
 		}
 	};

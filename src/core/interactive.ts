@@ -20,9 +20,15 @@ export async function askInitConfig(existingConfig?: SyncConfig) {
 				p.multiselect({
 					message: "Which agents are you using?",
 					options: [
+						{ value: "claude", label: "Claude Code" },
 						{ value: "cursor", label: "Cursor" },
-						{ value: "claude", label: "Claude" },
-						{ value: "gemini", label: "Gemini" },
+						{ value: "gemini", label: "Gemini CLI" },
+						{ value: "roocode", label: "Roo Code" },
+						{ value: "kilocode", label: "Kilo Code" },
+						{ value: "windsurf", label: "Windsurf" },
+						{ value: "opencode", label: "OpenCode" },
+						{ value: "antigravity", label: "Google Antigravity" },
+						{ value: "copilot", label: "GitHub Copilot" },
 					],
 					initialValues: existingConfig ? Object.keys(existingConfig.root) : [],
 				}),

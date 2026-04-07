@@ -167,7 +167,7 @@ export abstract class BaseAdapter {
 			manager.ignore(`${relDir}/`);
 
 			// Also ignore outputFile if it lives OUTSIDE agentDir
-			if (!this.outputFile.startsWith(this.agentDir + "/")) {
+			if (!this.outputFile.startsWith(`${this.agentDir}/`)) {
 				const relOutput = path.relative(
 					cwd,
 					path.join(config.targetPath, this.outputFile),

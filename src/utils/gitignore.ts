@@ -36,6 +36,6 @@ export class GitignoreManager {
 	/** Write changes to disk only if any entries were added. */
 	flush(): void {
 		if (!this.dirty) return;
-		fs.writeFileSync(this.gitignorePath, this.lines.join("\n") + "\n", "utf-8");
+		fs.writeFileSync(this.gitignorePath, `${this.lines.join("\n")}\n`, "utf-8");
 	}
 }
