@@ -45,12 +45,35 @@ export class OpenCodeAdapter extends BaseAdapter {
 		const agentsDir = path.join(config.targetPath, ".agents");
 		this.ensureDir(agentsDir);
 
-		// 3. Copy skills if enabled (uses parent's copySkills which checks includeSkills)
+		// 3. Copy slash-commands to .agents/commands/
+		if (config.includeSlashCommands !== false && config.slashCommands) {
+			const commandsDir = path.join(agentsDir, "commands");
+			this.ensureDir(commandsDir);
+			for (const cmd of config.slashCommands) {
+				fs.writeFileSync(
+					path.join(commandsDir, `${cmd.name}.md`),
+					cmd.content,
+					"utf-8",
+				);
+			}
+		}
+
+		// 4. Copy MCP config to .agents/mcp.json
+		if (config.includeMcp !== false && config.mcpServers) {
+			const mcpPath = path.join(agentsDir, "mcp.json");
+			fs.writeFileSync(
+				mcpPath,
+				JSON.stringify({ mcpServers: config.mcpServers }, null, 2),
+				"utf-8",
+			);
+		}
+
+		// 5. Copy skills if enabled (uses parent's copySkills which checks includeSkills)
 		if (config.includeSkills !== false) {
 			this.copySkills(config);
 		}
 
-		// 4. Merge MCP into opencode.json preserving all existing keys
+		// 6. Merge MCP into opencode.json preserving all existing keys
 		if (config.includeMcp !== false) {
 			const opencodePath = path.join(config.targetPath, "opencode.json");
 			let existing: Record<string, unknown> = {};
