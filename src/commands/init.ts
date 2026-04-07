@@ -26,6 +26,7 @@ function createDemoContent(syncDir: string) {
 					args: ["-y", "demo-package"],
 				},
 				"demo-remote": {
+					// biome-ignore lint/suspicious/noTemplateCurlyInString: This is intentional - env var placeholder
 					url: "${DEMO_API_KEY_1}/api/mcp",
 				},
 			},
@@ -33,7 +34,7 @@ function createDemoContent(syncDir: string) {
 		null,
 		2,
 	);
-	fs.writeFileSync(path.join(syncDir, "mcp.json"), mcpContent + "\n", "utf-8");
+	fs.writeFileSync(path.join(syncDir, "mcp.json"), `${mcpContent}\n`, "utf-8");
 
 	const envContent = `# Demo environment variables
 DEMO_API_KEY_1=https://example-api-1.com

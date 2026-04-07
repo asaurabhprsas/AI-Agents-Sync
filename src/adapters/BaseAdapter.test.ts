@@ -10,7 +10,7 @@ import type {
 	AgentsFolderSupport,
 } from "../types/schema.js";
 
-const TEMP_DIR = path.join(os.tmpdir(), `base-adapter-test-${Date.now()}`);
+const _TEMP_DIR = path.join(os.tmpdir(), `base-adapter-test-${Date.now()}`);
 
 class TestAdapter extends BaseAdapter {
 	readonly outputFile = "TEST.md";
