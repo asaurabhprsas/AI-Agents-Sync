@@ -10,58 +10,60 @@ describe("ClaudeAdapter", () => {
 		vi.restoreAllMocks();
 	});
 
-	it("generates a .claude.json file with combined persona and rules", () => {
-		const adapter = new ClaudeAdapter();
-		adapter.generate({
+	function makeConfig(overrides = {}) {
+		return {
 			agentName: "claude",
 			targetPath: "/mock/path",
 			basePersona: "You are a helpful assistant.",
 			rulesContent: "- Always write tests.",
 			mcpServers: { testServer: { command: "test" } },
 			slashCommands: [],
-			skills: [],
-		});
+			skillsSourceDir: "/mock/.ai-agents-sync/skills",
+			writtenFiles: new Set<string>(),
+			...overrides,
+		};
+	}
 
-		const expectedPath = path.join("/mock/path", ".claude.json");
+	it("generates a CLAUDE.md file with combined persona and rules", () => {
+		vi.mocked(fs.existsSync).mockReturnValue(false);
+		const adapter = new ClaudeAdapter();
+		adapter.generate(makeConfig());
+
 		expect(fs.writeFileSync).toHaveBeenCalledWith(
-			expectedPath,
-			expect.stringContaining(
-				"You are a helpful assistant.\\n\\n- Always write tests.",
-			),
-			"utf-8",
-		);
-		expect(fs.writeFileSync).toHaveBeenCalledWith(
-			expectedPath,
-			expect.stringContaining('"testServer"'),
+			path.join("/mock/path", "CLAUDE.md"),
+			"You are a helpful assistant.\n\n- Always write tests.",
 			"utf-8",
 		);
 	});
 
-	it("generates a .claude.json file with slash commands in persona", () => {
+	it("generates a CLAUDE.md file with slash commands in content", () => {
+		vi.mocked(fs.existsSync).mockReturnValue(false);
 		const adapter = new ClaudeAdapter();
-		adapter.generate({
-			agentName: "claude",
-			targetPath: "/mock/path",
-			basePersona: "You are Claude.",
-			rulesContent: "- Write tests.",
-			mcpServers: {},
-			slashCommands: [
-				{ name: "fix", description: "Fix code", content: "fix fix" },
-			],
-			skills: [],
-		});
+		adapter.generate(
+			makeConfig({
+				basePersona: "You are Claude.",
+				rulesContent: "- Write tests.",
+				mcpServers: {},
+				slashCommands: [
+					{ name: "fix", description: "Fix code", content: "fix fix" },
+				],
+			}),
+		);
 
-		const expectedPath = path.join("/mock/path", ".claude.json");
 		expect(fs.writeFileSync).toHaveBeenCalledWith(
-			expectedPath,
-			expect.stringContaining("Available Slash Commands:\\n- /fix: Fix code"),
+			path.join("/mock/path", "CLAUDE.md"),
+			expect.stringContaining("Available Slash Commands:\n- /fix: Fix code"),
 			"utf-8",
 		);
 	});
 
-	it("reports no .agents support", () => {
+	it("does not gitignore CLAUDE.md", () => {
 		const adapter = new ClaudeAdapter();
-		expect(adapter.capabilities.agentsFolderSupport).toBe("none");
-		expect(adapter.capabilities.unsupportedFeatures).toContain("agents");
+		expect(adapter.gitignoreOutputFile).toBe(false);
+	});
+
+	it("reports partial .agents support", () => {
+		const adapter = new ClaudeAdapter();
+		expect(adapter.capabilities.agentsFolderSupport).toBe("partial");
 	});
 });
