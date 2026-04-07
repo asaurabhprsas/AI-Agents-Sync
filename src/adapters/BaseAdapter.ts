@@ -57,6 +57,15 @@ export abstract class BaseAdapter {
 
 		const content = this.buildContent(config);
 		this.writeOutput(config, content);
+
+		// If output is CLAUDE.md, also write AGENTS.md
+		if (
+			path.basename(this.outputFile) === "CLAUDE.md" &&
+			this.outputFormat === "text"
+		) {
+			this.writeAgentsMd(config, content);
+		}
+
 		this.copySkills(config);
 		this.applyGitignore(config, preExistingFiles);
 
@@ -65,6 +74,15 @@ export abstract class BaseAdapter {
 				`✓ Generated ${config.agentName} config at ${config.targetPath}`,
 			),
 		);
+	}
+
+	private writeAgentsMd(config: AdapterConfig, content: string): void {
+		const agentsMdPath = path.join(config.targetPath, "AGENTS.md");
+		if (config.writtenFiles.has(agentsMdPath)) return;
+
+		config.writtenFiles.add(agentsMdPath);
+		fs.mkdirSync(path.dirname(agentsMdPath), { recursive: true });
+		fs.writeFileSync(agentsMdPath, content, "utf-8");
 	}
 
 	private snapshotAgentDir(targetPath: string): string[] {
@@ -98,12 +116,19 @@ export abstract class BaseAdapter {
 		fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 
 		// AGENTS.md deduplication: only write once per absolute path per run
+		const outputBasename = path.basename(this.outputFile);
 		const isAgentsMd =
-			path.basename(this.outputFile) === "AGENTS.md" &&
-			this.outputFormat === "text";
+			outputBasename === "AGENTS.md" && this.outputFormat === "text";
 		if (isAgentsMd) {
 			if (config.writtenFiles.has(outputPath)) return;
 			config.writtenFiles.add(outputPath);
+		}
+
+		// Also track CLAUDE.md so AGENTS.md can be generated after it
+		if (outputBasename === "CLAUDE.md" && this.outputFormat === "text") {
+			if (!config.writtenFiles.has(outputPath)) {
+				config.writtenFiles.add(outputPath);
+			}
 		}
 
 		if (this.outputFormat === "json") {
@@ -133,7 +158,7 @@ export abstract class BaseAdapter {
 		}
 	}
 
-	private copySkills(config: AdapterConfig): void {
+	protected copySkills(config: AdapterConfig): void {
 		if (config.includeSkills === false) return;
 		if (!config.skillsSourceDir || !fs.existsSync(config.skillsSourceDir))
 			return;

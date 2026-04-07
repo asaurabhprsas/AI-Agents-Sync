@@ -26,7 +26,12 @@ export class OpenCodeAdapter extends BaseAdapter {
 		if (!config.writtenFiles.has(agentsMdPath)) {
 			config.writtenFiles.add(agentsMdPath);
 			let content = `${config.basePersona}\n\n${config.rulesContent}`.trim();
-			if (config.slashCommands.length > 0) {
+			const includeSlash = config.includeSlashCommands !== false;
+			if (
+				includeSlash &&
+				config.slashCommands &&
+				config.slashCommands.length > 0
+			) {
 				content += "\n\nAvailable Slash Commands:\n";
 				for (const cmd of config.slashCommands) {
 					content += `- /${cmd.name}: ${cmd.description}\n`;
@@ -36,14 +41,25 @@ export class OpenCodeAdapter extends BaseAdapter {
 			fs.writeFileSync(agentsMdPath, content, "utf-8");
 		}
 
-		// 2. Merge MCP into opencode.json preserving all existing keys
-		const opencodePath = path.join(config.targetPath, "opencode.json");
-		let existing: Record<string, unknown> = {};
-		if (fs.existsSync(opencodePath)) {
-			existing = JSON.parse(fs.readFileSync(opencodePath, "utf-8") as string);
+		// 2. Copy skills if enabled (uses parent's copySkills which checks includeSkills)
+		if (config.includeSkills !== false) {
+			this.copySkills(config);
 		}
-		existing.mcp = config.mcpServers;
-		fs.writeFileSync(opencodePath, JSON.stringify(existing, null, 2), "utf-8");
+
+		// 3. Merge MCP into opencode.json preserving all existing keys
+		if (config.includeMcp !== false) {
+			const opencodePath = path.join(config.targetPath, "opencode.json");
+			let existing: Record<string, unknown> = {};
+			if (fs.existsSync(opencodePath)) {
+				existing = JSON.parse(fs.readFileSync(opencodePath, "utf-8") as string);
+			}
+			existing.mcp = config.mcpServers;
+			fs.writeFileSync(
+				opencodePath,
+				JSON.stringify(existing, null, 2),
+				"utf-8",
+			);
+		}
 
 		console.log(
 			chalk.green(

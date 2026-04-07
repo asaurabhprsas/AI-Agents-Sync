@@ -11,9 +11,7 @@ import { OpenCodeAdapter } from "../adapters/OpenCodeAdapter.js";
 import { RooCodeAdapter } from "../adapters/RooCodeAdapter.js";
 import { WindsurfAdapter } from "../adapters/WindsurfAdapter.js";
 import { injectEnvVars } from "../core/env-injector.js";
-import { askAgentSelection } from "../core/interactive.js";
 import { loadConfig } from "../core/parser.js";
-import type { SlashCommand } from "../types/schema.js";
 
 function getAdapter(agentName: string) {
 	switch (agentName.toLowerCase()) {
@@ -40,35 +38,6 @@ function getAdapter(agentName: string) {
 	}
 }
 
-function loadSlashCommands(syncDir: string): SlashCommand[] {
-	const commandsDir = path.join(syncDir, "slash-commands");
-	if (!fs.existsSync(commandsDir)) {
-		return [];
-	}
-
-	const commands: SlashCommand[] = [];
-	const files = fs.readdirSync(commandsDir).filter((f) => f.endsWith(".md"));
-
-	for (const file of files) {
-		const filePath = path.join(commandsDir, file);
-		const content = fs.readFileSync(filePath, "utf-8");
-		const commandName = file.replace(".md", "");
-
-		const descriptionMatch = content.match(/^#\s*(.+?)(?:\n|$)/);
-		const description = descriptionMatch
-			? descriptionMatch[1]
-			: `/${commandName}`;
-
-		commands.push({
-			name: commandName,
-			description: description.trim(),
-			content: content,
-		});
-	}
-
-	return commands;
-}
-
 function loadRulesContent(syncDir: string, rules: string[]): string {
 	let rulesContent = "";
 	for (const ruleFile of rules) {
@@ -82,24 +51,32 @@ function loadRulesContent(syncDir: string, rules: string[]): string {
 	return rulesContent;
 }
 
-export async function applyCommand(agents: string[]) {
+function writeWorkspaceAgentsMd(
+	targetPath: string,
+	basePersona: string,
+	rulesContent: string,
+	writtenFiles: Set<string>,
+): void {
+	const agentsMdPath = path.join(targetPath, "AGENTS.md");
+	if (writtenFiles.has(agentsMdPath)) return;
+	writtenFiles.add(agentsMdPath);
+
+	const content = `${basePersona}\n\n${rulesContent}`.trim();
+	fs.mkdirSync(path.dirname(agentsMdPath), { recursive: true });
+	fs.writeFileSync(agentsMdPath, content, "utf-8");
+}
+
+export async function applyCommand(_agents: string[]) {
 	const cwd = process.cwd();
 	const syncDir = path.join(cwd, ".ai-agents-sync");
 
 	const config = await loadConfig(cwd);
 
 	const defaultAgents = config.defaultAgents || [];
-	const slashCommands = loadSlashCommands(syncDir);
-	const skillsSourceDir = path.join(syncDir, "skills");
-	const writtenFiles = new Set<string>();
 
-	let selectedAgents = agents;
-	if (agents.length === 0) {
-		if (defaultAgents.length === 0) {
-			console.log(chalk.yellow("No agents configured in sync.config.js"));
-			return;
-		}
-		selectedAgents = await askAgentSelection(defaultAgents);
+	if (defaultAgents.length === 0) {
+		console.log(chalk.yellow("No agents configured in sync.config.js"));
+		return;
 	}
 
 	const commonAgentsPath = path.join(syncDir, "agents-md", "common-agents.md");
@@ -119,60 +96,40 @@ export async function applyCommand(agents: string[]) {
 	const injectedMcpContent = injectEnvVars(rawMcpContent);
 	const fullMcpConfig = JSON.parse(injectedMcpContent);
 
-	const generateForAgents = (
-		agentList: string[],
-		targetPath: string,
-		basePersona: string,
-		rules: string[],
-		options: {
-			includeSkills: boolean;
-			includeMcp: boolean;
-			includeSlashCommands: boolean;
-		},
-	) => {
-		for (const agentName of agentList) {
-			if (selectedAgents.length > 0 && !selectedAgents.includes(agentName))
-				continue;
-
-			const adapter = getAdapter(agentName);
-			if (!adapter) {
-				console.warn(
-					chalk.yellow(`Warning: Unknown adapter for agent '${agentName}'`),
-				);
-				continue;
-			}
-
-			const rulesContent = loadRulesContent(syncDir, rules);
-			const allMcps: Record<string, unknown> = fullMcpConfig.mcpServers || {};
-
-			adapter.generate({
-				agentName,
-				targetPath,
-				basePersona,
-				rulesContent,
-				mcpServers: allMcps,
-				slashCommands: slashCommands,
-				skillsSourceDir,
-				writtenFiles,
-				includeSkills: options.includeSkills,
-				includeMcp: options.includeMcp,
-				includeSlashCommands: options.includeSlashCommands,
-			});
-		}
-	};
-
 	const rootPersona = config.mergeCommonWithMain
 		? `${mainAgents}\n\n${commonAgents}`.trim()
 		: mainAgents;
 
 	const rootRules = config.root?.rules || ["default-rules.md"];
+	const rootRulesContent = loadRulesContent(syncDir, rootRules);
+
+	const writtenFiles = new Set<string>();
 
 	console.log(chalk.blue("Processing root targets..."));
-	generateForAgents(defaultAgents, cwd, rootPersona, rootRules, {
-		includeSkills: true,
-		includeMcp: true,
-		includeSlashCommands: true,
-	});
+	for (const agentName of defaultAgents) {
+		const adapter = getAdapter(agentName);
+
+		if (!adapter) {
+			console.warn(
+				chalk.yellow(`Warning: Unknown adapter for agent '${agentName}'`),
+			);
+			continue;
+		}
+
+		adapter.generate({
+			agentName,
+			targetPath: cwd,
+			basePersona: rootPersona,
+			rulesContent: rootRulesContent,
+			mcpServers: fullMcpConfig.mcpServers || {},
+			slashCommands: [],
+			skillsSourceDir: path.join(syncDir, "skills"),
+			writtenFiles,
+			includeSkills: true,
+			includeMcp: true,
+			includeSlashCommands: true,
+		});
+	}
 
 	console.log(chalk.blue("Processing workspace targets..."));
 	for (const [wsPath, wsDef] of Object.entries(config.workspaces)) {
@@ -183,16 +140,14 @@ export async function applyCommand(agents: string[]) {
 			: commonAgents;
 
 		const wsRules = wsDef.rules || ["default-rules.md"];
-		generateForAgents(
-			defaultAgents,
-			path.join(cwd, wsPath),
+		const wsRulesContent = loadRulesContent(syncDir, wsRules);
+
+		const wsTargetPath = path.join(cwd, wsPath);
+		writeWorkspaceAgentsMd(
+			wsTargetPath,
 			wsPersona,
-			wsRules,
-			{
-				includeSkills: false,
-				includeMcp: false,
-				includeSlashCommands: false,
-			},
+			wsRulesContent,
+			writtenFiles,
 		);
 	}
 

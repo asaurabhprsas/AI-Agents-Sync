@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -7,15 +7,15 @@ vi.mock("../core/parser.js", () => ({
 	loadConfig: vi.fn(),
 }));
 
-vi.mock("../core/interactive.js", () => ({
-	askAgentSelection: vi.fn(),
+vi.mock("../core/env-injector.js", () => ({
+	injectEnvVars: vi.fn((content) => content),
 }));
 
 import { applyCommand } from "./apply.js";
 import { ClaudeAdapter } from "../adapters/ClaudeAdapter.js";
 import { loadConfig } from "../core/parser.js";
 
-describe("applyCommand include options", () => {
+describe("applyCommand workspace behavior", () => {
 	let tempDir: string;
 	let generateSpy: ReturnType<typeof vi.spyOn>;
 
@@ -30,6 +30,10 @@ describe("applyCommand include options", () => {
 		fs.mkdirSync(path.join(syncDir, "skills"));
 
 		fs.writeFileSync(
+			path.join(syncDir, "agents-md", "common-agents.md"),
+			"# Common Rules\nYou are a common agent.",
+		);
+		fs.writeFileSync(
 			path.join(syncDir, "agents-md", "main-agents.md"),
 			"# Main Agents\nYou are a main agent.",
 		);
@@ -37,6 +41,7 @@ describe("applyCommand include options", () => {
 			path.join(syncDir, "agents-md", "default-rules.md"),
 			"# Default Rules\nBe helpful.",
 		);
+		fs.writeFileSync(path.join(syncDir, "mcp.json"), '{"mcpServers":{}}');
 
 		vi.mocked(loadConfig).mockResolvedValue({
 			defaultAgents: ["claude"],
@@ -51,28 +56,42 @@ describe("applyCommand include options", () => {
 		generateSpy = vi.spyOn(ClaudeAdapter.prototype, "generate");
 	});
 
-	it("passes include options to adapter for root generation", async () => {
-		await applyCommand(["claude"]);
+	afterEach(() => {
+		process.chdir("/");
+		fs.rmSync(tempDir, { recursive: true, force: true });
+	});
+
+	it("calls adapter.generate() for root with full include options", async () => {
+		await applyCommand([]);
 
 		expect(generateSpy).toHaveBeenCalled();
 		const call = generateSpy.mock.calls[0][0];
+		expect(call.targetPath).toBe(tempDir);
 		expect(call.includeSkills).toBe(true);
 		expect(call.includeMcp).toBe(true);
 		expect(call.includeSlashCommands).toBe(true);
 	});
 
-	it("passes limited include options to adapter for workspace generation", async () => {
-		await applyCommand(["claude"]);
+	it("does NOT call adapter.generate() for workspaces", async () => {
+		await applyCommand([]);
 
 		const calls = generateSpy.mock.calls;
-		const workspaceCall = calls.find(
-			(call) => call[0].targetPath === path.join(tempDir, "packages/pkg1"),
+		const workspaceCalls = calls.filter(
+			(call: unknown[]) =>
+				(call[0] as { targetPath: string }).targetPath ===
+				path.join(tempDir, "packages/pkg1"),
 		);
 
-		expect(workspaceCall).toBeDefined();
-		if (!workspaceCall) return;
-		expect(workspaceCall[0].includeSkills).toBe(false);
-		expect(workspaceCall[0].includeMcp).toBe(false);
-		expect(workspaceCall[0].includeSlashCommands).toBe(false);
+		expect(workspaceCalls).toHaveLength(0);
+	});
+
+	it("writes AGENTS.md directly for workspaces", async () => {
+		await applyCommand([]);
+
+		const workspaceAgentsMd = path.join(tempDir, "packages/pkg1", "AGENTS.md");
+		expect(fs.existsSync(workspaceAgentsMd)).toBe(true);
+		const content = fs.readFileSync(workspaceAgentsMd, "utf-8");
+		expect(content).toContain("You are a common agent.");
+		expect(content).toContain("Be helpful.");
 	});
 });
