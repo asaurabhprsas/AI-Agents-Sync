@@ -29,7 +29,10 @@ export interface AdapterConfig {
 	rulesContent: string;
 	mcpServers: Record<string, unknown>;
 	slashCommands: SlashCommand[];
-	skills: { name: string; path: string }[];
+	/** Absolute path to .ai-agents-sync/skills/ — all subdirs are copied as skills */
+	skillsSourceDir: string;
+	/** Tracks files already written in this run to avoid duplicate writes */
+	writtenFiles: Set<string>;
 }
 
 export type AgentsFolderSupport = "full" | "partial" | "none";
@@ -37,11 +40,4 @@ export type AgentsFolderSupport = "full" | "partial" | "none";
 export interface AdapterCapabilities {
 	agentsFolderSupport: AgentsFolderSupport;
 	unsupportedFeatures: ("mcp" | "skills" | "slash-commands" | "agents")[];
-	customNames?: {
-		folder?: string; // e.g., ".kilocode"
-		mcpFile?: string; // e.g., "mcp-config.json"
-		mcpKey?: string; // e.g., "mcp"
-		skillsFolder?: string;
-		commandsFolder?: string;
-	};
 }
