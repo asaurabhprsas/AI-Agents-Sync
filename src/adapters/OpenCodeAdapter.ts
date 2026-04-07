@@ -41,12 +41,16 @@ export class OpenCodeAdapter extends BaseAdapter {
 			fs.writeFileSync(agentsMdPath, content, "utf-8");
 		}
 
-		// 2. Copy skills if enabled (uses parent's copySkills which checks includeSkills)
+		// 2. Always create .agents directory (for universal compatibility)
+		const agentsDir = path.join(config.targetPath, ".agents");
+		this.ensureDir(agentsDir);
+
+		// 3. Copy skills if enabled (uses parent's copySkills which checks includeSkills)
 		if (config.includeSkills !== false) {
 			this.copySkills(config);
 		}
 
-		// 3. Merge MCP into opencode.json preserving all existing keys
+		// 4. Merge MCP into opencode.json preserving all existing keys
 		if (config.includeMcp !== false) {
 			const opencodePath = path.join(config.targetPath, "opencode.json");
 			let existing: Record<string, unknown> = {};
