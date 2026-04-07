@@ -124,6 +124,11 @@ export async function applyCommand(agents: string[]) {
 		targetPath: string,
 		basePersona: string,
 		rules: string[],
+		options: {
+			includeSkills: boolean;
+			includeMcp: boolean;
+			includeSlashCommands: boolean;
+		},
 	) => {
 		for (const agentName of agentList) {
 			if (selectedAgents.length > 0 && !selectedAgents.includes(agentName))
@@ -149,6 +154,9 @@ export async function applyCommand(agents: string[]) {
 				slashCommands: slashCommands,
 				skillsSourceDir,
 				writtenFiles,
+				includeSkills: options.includeSkills,
+				includeMcp: options.includeMcp,
+				includeSlashCommands: options.includeSlashCommands,
 			});
 		}
 	};
@@ -160,7 +168,11 @@ export async function applyCommand(agents: string[]) {
 	const rootRules = config.root?.rules || ["default-rules.md"];
 
 	console.log(chalk.blue("Processing root targets..."));
-	generateForAgents(defaultAgents, cwd, rootPersona, rootRules);
+	generateForAgents(defaultAgents, cwd, rootPersona, rootRules, {
+		includeSkills: true,
+		includeMcp: true,
+		includeSlashCommands: true,
+	});
 
 	console.log(chalk.blue("Processing workspace targets..."));
 	for (const [wsPath, wsDef] of Object.entries(config.workspaces)) {
@@ -176,6 +188,11 @@ export async function applyCommand(agents: string[]) {
 			path.join(cwd, wsPath),
 			wsPersona,
 			wsRules,
+			{
+				includeSkills: false,
+				includeMcp: false,
+				includeSlashCommands: false,
+			},
 		);
 	}
 
