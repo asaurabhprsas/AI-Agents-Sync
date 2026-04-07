@@ -15,12 +15,14 @@ export class OpenCodeAdapter extends BaseAdapter {
 	readonly mcpKey = "mcp";
 	readonly mcpFile = null;
 	readonly skillDir = ".agents/skills";
-	readonly agentDir = null;
-	readonly gitignoreOutputFile = false;
+	readonly agentDir = ".agents";
+	readonly gitignoreOutputFile = true;
 	readonly agentsFolderSupport: AgentsFolderSupport = "partial";
 	readonly unsupportedFeatures: AdapterCapabilities["unsupportedFeatures"] = [];
 
 	override generate(config: AdapterConfig): void {
+		const agentsDir = path.join(config.targetPath, ".agents");
+
 		// 1. Write AGENTS.md (deduped)
 		const agentsMdPath = path.join(config.targetPath, "AGENTS.md");
 		if (!config.writtenFiles.has(agentsMdPath)) {
@@ -41,8 +43,7 @@ export class OpenCodeAdapter extends BaseAdapter {
 			fs.writeFileSync(agentsMdPath, content, "utf-8");
 		}
 
-		// 2. Always create .agents directory (for universal compatibility)
-		const agentsDir = path.join(config.targetPath, ".agents");
+		// 2. Create .agents directory
 		this.ensureDir(agentsDir);
 
 		// 3. Copy slash-commands to .agents/commands/
@@ -68,12 +69,12 @@ export class OpenCodeAdapter extends BaseAdapter {
 			);
 		}
 
-		// 5. Copy skills if enabled (uses parent's copySkills which checks includeSkills)
+		// 5. Copy skills if enabled
 		if (config.includeSkills !== false) {
 			this.copySkills(config);
 		}
 
-		// 6. Merge MCP into opencode.json preserving all existing keys
+		// 6. Merge MCP into opencode.json
 		if (config.includeMcp !== false) {
 			const opencodePath = path.join(config.targetPath, "opencode.json");
 			let existing: Record<string, unknown> = {};
