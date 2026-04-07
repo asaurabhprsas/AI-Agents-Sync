@@ -4,6 +4,44 @@ import * as p from "@clack/prompts";
 import chalk from "chalk";
 import { askInitConfig } from "../core/interactive.js";
 
+function createDemoContent(syncDir: string) {
+	fs.mkdirSync(path.join(syncDir, "skills", "demo-skill"), { recursive: true });
+	fs.writeFileSync(
+		path.join(syncDir, "skills", "demo-skill", "README.md"),
+		"# Demo Skill\n\nThis is a sample skill for demonstration.\n",
+		"utf-8",
+	);
+
+	fs.writeFileSync(
+		path.join(syncDir, "slash-commands", "demo.md"),
+		"# Demo Command\n\nThis is a sample slash command for demonstration.\n",
+		"utf-8",
+	);
+
+	const mcpContent = JSON.stringify(
+		{
+			mcpServers: {
+				"demo-command": {
+					command: "npx",
+					args: ["-y", "demo-package"],
+				},
+				"demo-remote": {
+					url: "${DEMO_API_KEY_1}/api/mcp",
+				},
+			},
+		},
+		null,
+		2,
+	);
+	fs.writeFileSync(path.join(syncDir, "mcp.json"), mcpContent + "\n", "utf-8");
+
+	const envContent = `# Demo environment variables
+DEMO_API_KEY_1=https://example-api-1.com
+DEMO_API_KEY_2=example_key_2
+`;
+	fs.writeFileSync(path.join(syncDir, ".env.agents"), envContent, "utf-8");
+}
+
 export async function initCommand(options: { update?: boolean } = {}) {
 	const cwd = process.cwd();
 	const syncDir = path.join(cwd, ".ai-agents-sync");
@@ -74,6 +112,12 @@ export async function initCommand(options: { update?: boolean } = {}) {
 
 	const answers = await askInitConfig();
 
+	const addDemo = await p.confirm({
+		message:
+			"Would you like to add demo content (skills, MCP, slash-commands)?",
+		initialValue: true,
+	});
+
 	fs.writeFileSync(
 		path.join(syncDir, "agents-md", "main-agents.md"),
 		"# Root Persona\nYou are an expert developer.\n",
@@ -108,17 +152,21 @@ export async function initCommand(options: { update?: boolean } = {}) {
 		"utf-8",
 	);
 
+	if (addDemo) {
+		createDemoContent(syncDir);
+	}
+
 	const gitignorePath = path.join(cwd, ".gitignore");
 	if (fs.existsSync(gitignorePath)) {
 		const gitignore = fs.readFileSync(gitignorePath, "utf-8");
-		if (!gitignore.includes(".env.agent")) {
-			fs.appendFileSync(gitignorePath, "\n.env.agent\n", "utf-8");
+		if (!gitignore.includes(".env.agents")) {
+			fs.appendFileSync(gitignorePath, "\n.env.agents\n", "utf-8");
 		}
 		if (!gitignore.includes(".ai-agents-sync")) {
 			fs.appendFileSync(gitignorePath, "\n.ai-agents-sync\n", "utf-8");
 		}
 	} else {
-		fs.writeFileSync(gitignorePath, ".env.agent\n.ai-agents-sync\n", "utf-8");
+		fs.writeFileSync(gitignorePath, ".env.agents\n.ai-agents-sync\n", "utf-8");
 	}
 
 	console.log(
