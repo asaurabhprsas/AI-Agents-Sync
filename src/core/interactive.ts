@@ -30,7 +30,7 @@ export async function askInitConfig(existingConfig?: SyncConfig) {
 						{ value: "antigravity", label: "Google Antigravity" },
 						{ value: "copilot", label: "GitHub Copilot" },
 					],
-					initialValues: existingConfig ? Object.keys(existingConfig.root) : [],
+					initialValues: existingConfig?.defaultAgents || [],
 				}),
 			mergeCommon: () =>
 				p.confirm({

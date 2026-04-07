@@ -43,13 +43,7 @@ export async function initCommand(options: { update?: boolean } = {}) {
 		const answers = await askInitConfig(existingConfig);
 
 		if (answers.agents && answers.agents.length > 0) {
-			const oldRoot = existingConfig.root || {};
-			existingConfig.root = {};
-			for (const agent of answers.agents) {
-				existingConfig.root[agent] = oldRoot[agent] || {
-					rules: ["default-rules.md"],
-				};
-			}
+			existingConfig.defaultAgents = answers.agents;
 		}
 		existingConfig.mergeCommonWithMain = answers.mergeCommon;
 
@@ -101,16 +95,10 @@ export async function initCommand(options: { update?: boolean } = {}) {
 		"utf-8",
 	);
 
-	const rootConfig: Record<string, { rules: string[] }> = {};
-	if (answers.agents && answers.agents.length > 0) {
-		for (const agent of answers.agents) {
-			rootConfig[agent] = { rules: ["default-rules.md"] };
-		}
-	}
-
 	const config = {
 		mergeCommonWithMain: answers.mergeCommon,
-		root: rootConfig,
+		defaultAgents: answers.agents || [],
+		root: { rules: ["default-rules.md"] },
 		workspaces: {},
 	};
 

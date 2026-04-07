@@ -6,11 +6,9 @@ export const AgentTargetSchema = z.object({
 
 export const SyncConfigSchema = z.object({
 	mergeCommonWithMain: z.boolean().optional().default(false),
-	root: z.record(z.string(), AgentTargetSchema).optional().default({}),
-	workspaces: z
-		.record(z.string(), z.record(z.string(), AgentTargetSchema))
-		.optional()
-		.default({}),
+	defaultAgents: z.array(z.string()).optional().default([]),
+	root: AgentTargetSchema.optional(),
+	workspaces: z.record(z.string(), AgentTargetSchema).optional().default({}),
 });
 
 export type AgentTarget = z.infer<typeof AgentTargetSchema>;

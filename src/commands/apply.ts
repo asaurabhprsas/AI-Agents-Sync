@@ -13,7 +13,7 @@ import { WindsurfAdapter } from "../adapters/WindsurfAdapter.js";
 import { injectEnvVars } from "../core/env-injector.js";
 import { askAgentSelection } from "../core/interactive.js";
 import { loadConfig } from "../core/parser.js";
-import type { AgentTarget, SlashCommand } from "../types/schema.js";
+import type { SlashCommand } from "../types/schema.js";
 
 function getAdapter(agentName: string) {
 	switch (agentName.toLowerCase()) {
@@ -69,30 +69,37 @@ function loadSlashCommands(syncDir: string): SlashCommand[] {
 	return commands;
 }
 
+function loadRulesContent(syncDir: string, rules: string[]): string {
+	let rulesContent = "";
+	for (const ruleFile of rules) {
+		const rulePath = path.join(syncDir, "agents-md", ruleFile);
+		if (fs.existsSync(rulePath)) {
+			rulesContent += `${fs.readFileSync(rulePath, "utf-8")}\n\n`;
+		} else {
+			console.warn(chalk.yellow(`Warning: Rule file ${ruleFile} not found.`));
+		}
+	}
+	return rulesContent;
+}
+
 export async function applyCommand(agents: string[]) {
 	const cwd = process.cwd();
 	const syncDir = path.join(cwd, ".ai-agents-sync");
 
 	const config = await loadConfig(cwd);
 
+	const defaultAgents = config.defaultAgents || [];
 	const slashCommands = loadSlashCommands(syncDir);
 	const skillsSourceDir = path.join(syncDir, "skills");
 	const writtenFiles = new Set<string>();
 
 	let selectedAgents = agents;
 	if (agents.length === 0) {
-		const availableAgents = new Set<string>();
-		for (const agent of Object.keys(config.root)) availableAgents.add(agent);
-		for (const ws of Object.values(config.workspaces)) {
-			for (const agent of Object.keys(ws)) availableAgents.add(agent);
-		}
-
-		if (availableAgents.size === 0) {
+		if (defaultAgents.length === 0) {
 			console.log(chalk.yellow("No agents configured in sync.config.js"));
 			return;
 		}
-
-		selectedAgents = await askAgentSelection(Array.from(availableAgents));
+		selectedAgents = await askAgentSelection(defaultAgents);
 	}
 
 	const commonAgentsPath = path.join(syncDir, "agents-md", "common-agents.md");
@@ -112,12 +119,13 @@ export async function applyCommand(agents: string[]) {
 	const injectedMcpContent = injectEnvVars(rawMcpContent);
 	const fullMcpConfig = JSON.parse(injectedMcpContent);
 
-	const processTarget = (
-		targetDef: Record<string, AgentTarget>,
+	const generateForAgents = (
+		agentList: string[],
 		targetPath: string,
 		basePersona: string,
+		rules: string[],
 	) => {
-		for (const [agentName, agentConfig] of Object.entries(targetDef)) {
+		for (const agentName of agentList) {
 			if (selectedAgents.length > 0 && !selectedAgents.includes(agentName))
 				continue;
 
@@ -129,18 +137,7 @@ export async function applyCommand(agents: string[]) {
 				continue;
 			}
 
-			let rulesContent = "";
-			for (const ruleFile of agentConfig.rules) {
-				const rulePath = path.join(syncDir, "agents-md", ruleFile);
-				if (fs.existsSync(rulePath)) {
-					rulesContent += `${fs.readFileSync(rulePath, "utf-8")}\n\n`;
-				} else {
-					console.warn(
-						chalk.yellow(`Warning: Rule file ${ruleFile} not found.`),
-					);
-				}
-			}
-
+			const rulesContent = loadRulesContent(syncDir, rules);
 			const allMcps: Record<string, unknown> = fullMcpConfig.mcpServers || {};
 
 			adapter.generate({
@@ -160,8 +157,10 @@ export async function applyCommand(agents: string[]) {
 		? `${mainAgents}\n\n${commonAgents}`.trim()
 		: mainAgents;
 
+	const rootRules = config.root?.rules || ["default-rules.md"];
+
 	console.log(chalk.blue("Processing root targets..."));
-	processTarget(config.root, cwd, rootPersona);
+	generateForAgents(defaultAgents, cwd, rootPersona, rootRules);
 
 	console.log(chalk.blue("Processing workspace targets..."));
 	for (const [wsPath, wsDef] of Object.entries(config.workspaces)) {
@@ -171,7 +170,13 @@ export async function applyCommand(agents: string[]) {
 			? `${commonAgents}\n\n${fs.readFileSync(wsAgentFile, "utf-8")}`.trim()
 			: commonAgents;
 
-		processTarget(wsDef, path.join(cwd, wsPath), wsPersona);
+		const wsRules = wsDef.rules || ["default-rules.md"];
+		generateForAgents(
+			defaultAgents,
+			path.join(cwd, wsPath),
+			wsPersona,
+			wsRules,
+		);
 	}
 
 	console.log(chalk.green("✓ Sync complete!"));

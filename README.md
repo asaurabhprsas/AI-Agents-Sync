@@ -81,35 +81,21 @@ This will prompt you to modify the existing config while creating a backup.
 
 ### 2. Configure
 
-Edit `.ai-agents-sync/sync.config.json` to define which agents get which rules:
+Edit `.ai-agents-sync/sync.config.json` to define which agents and rules to use:
 
 ```json
 {
   "mergeCommonWithMain": true,
+  "defaultAgents": ["opencode", "gemini", "cursor"],
   "root": {
-    "cursor": {
-      "rules": ["default-rules.md"],
-      "mcpServers": []
-    },
-    "claude": {
-      "rules": ["default-rules.md"],
-      "mcpServers": ["github-mcp"]
-    },
-    "gemini": {
-      "rules": ["default-rules.md"],
-      "mcpServers": []
-    },
-    "roocode": {
-      "rules": ["default-rules.md"],
-      "mcpServers": []
-    }
+    "rules": ["default-rules.md"]
   },
   "workspaces": {
     "apps/web": {
-      "cursor": { "rules": ["frontend-rules.md"], "mcpServers": [] }
+      "rules": ["frontend-rules.md"]
     },
     "packages/shared": {
-      "cursor": { "rules": ["library-rules.md"], "mcpServers": [] }
+      "rules": ["library-rules.md"]
     }
   }
 }
