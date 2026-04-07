@@ -8,8 +8,8 @@ AIAgentsSync is a Node.js CLI tool that acts as a central "source of truth" for 
 
 ## ✨ Features
 
-- **Adapter Pattern**: Generates native config formats for various agents (`.cursorrules`, `.claude.json`, `.agents/`).
-- **Adapter Capabilities**: Each adapter declares its support for `.agents` folder (full, partial, or none).
+- **Adapter Pattern**: Generates native config formats for various agents (`.cursorrules`, `CLAUDE.md`, `AGENTS.md`, etc.).
+- **Adapter Capabilities**: Each adapter declares its support for `.agents` folder (full, partial, or none) and features (MCP, skills, slash-commands).
 - **Interactive CLI**: All commands use modern terminal UI with `@clack/prompts`.
 - **Workspace Support**: Distribute different rule sets to specific packages in a monorepo.
 - **Persona Merging**: Combine global personas with package-specific instructions.
@@ -34,7 +34,16 @@ pnpm link --global
 Scaffold the `.ai-agents-sync` directory in your project root:
 
 ```bash
-agentsync init
+.ai-agents-sync/
+├── agents-md/           # Agent-specific markdown files
+│   ├── main-agents.md
+│   ├── common-agents.md
+│   └── [workspace]-agents.md
+├── slash-commands/      # Command definitions as .md files
+│   └── [command-name].md
+├── skills/              # Skill definitions
+├── mcp.json             # MCP servers configuration
+└── sync.config.json     # Routing configuration
 ```
 
 This creates the new structure:
@@ -48,8 +57,6 @@ This creates the new structure:
 ├── slash-commands/      # Command definitions as .md files
 │   └── [command-name].md
 ├── skills/              # Skill definitions
-├── agents-instruction/  # Rule files
-│   └── default-rules.md
 ├── mcp.json             # MCP servers configuration
 └── sync.config.json     # Routing configuration
 ```
@@ -91,6 +98,10 @@ Edit `.ai-agents-sync/sync.config.json` to define which agents get which rules:
     "gemini": {
       "rules": ["default-rules.md"],
       "mcpServers": []
+    },
+    "roocode": {
+      "rules": ["default-rules.md"],
+      "mcpServers": []
     }
   },
   "workspaces": {
@@ -122,7 +133,7 @@ agentsync apply cursor claude
 
 ### Slash Commands
 
-Create slash commands as markdown files in `.ai-agents-sync/slack-commands/`:
+Create slash commands as markdown files in `.ai-agents-sync/slash-commands/`:
 
 ```markdown
 # Fix Bug
@@ -137,18 +148,29 @@ Each adapter declares its support for different features:
 
 | Adapter  | .agents Folder | MCP  | Skills | Slash Commands |
 |----------|---------------|------|--------|----------------|
-| Claude   | ❌             | ✅   | ❌     | ✅ (in config) |
-| Cursor   | ❌             | ❌   | ❌     | ✅ (in config) |
-| Gemini   | ⚡️ Partial    | ❌*  | ✅     | ✅             |
+| Claude   | partial       | ✅   | ✅     | ✅ |
+| Cursor   | none          | ✅   | ✅     | ✅ |
+| Gemini   | partial       | ✅   | ✅     | ✅ |
+| Roo Code | full          | ✅   | ✅     | ✅ |
+| Kilo Code| full          | ✅   | ✅     | ✅ |
+| Windsurf | partial       | ✅   | ✅     | ✅ |
+| OpenCode | partial       | ✅   | ✅     | ✅ |
+| Antigravity| partial     | ✅   | ✅     | ✅ |
+| Copilot  | none          | ❌   | ✅     | ✅ |
 
-*Gemini MCP is generated separately in `mcp.json` (not in `.agents/`)
+*Claude outputs `CLAUDE.md` instead of using `.claude.json`
+*Roocode/KiloCode support full .agents folder (their config goes inside .roo/ or .kilocode/)
+*Windsurf outputs AGENTS.md at root and .windsurf/mcp.json
+*OpenCode merges MCP into opencode.json under "mcp" key
+*Antigravity outputs to .gemini/antigravity/ directory
+*Copilot has no MCP support
 
 ## 📦 Monorepo Setup (pnpm/Yarn/Lerna)
 
 AIAgentsSync is designed with monorepos in mind:
 1. **Avoid Token Bloat**: Send only package-specific rules to the AI agent.
 2. **Centralized Personas**: Keep a single `common-agents.md` at the root.
-3. **Local Context**: AI agents in `apps/web` get generated `.cursorrules` or `.claude.json` specific to that directory.
+3. **Local Context**: AI agents in `apps/web` get generated `.cursorrules` or `CLAUDE.md` specific to that directory.
 
 ## 🧪 Testing & Development
 
