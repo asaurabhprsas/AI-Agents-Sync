@@ -38,6 +38,33 @@ function getAdapter(agentName: string) {
 	}
 }
 
+function loadSlashCommands(syncDir: string) {
+	const commandsDir = path.join(syncDir, "slash-commands");
+	if (!fs.existsSync(commandsDir)) return [];
+
+	const commands = [];
+	const files = fs.readdirSync(commandsDir).filter((f) => f.endsWith(".md"));
+
+	for (const file of files) {
+		const filePath = path.join(commandsDir, file);
+		const content = fs.readFileSync(filePath, "utf-8");
+		const commandName = file.replace(".md", "");
+
+		const descriptionMatch = content.match(/^#\s*(.+?)(?:\n|$)/);
+		const description = descriptionMatch
+			? descriptionMatch[1]
+			: `/${commandName}`;
+
+		commands.push({
+			name: commandName,
+			description: description.trim(),
+			content: content,
+		});
+	}
+
+	return commands;
+}
+
 function loadRulesContent(syncDir: string, rules: string[]): string {
 	let rulesContent = "";
 	for (const ruleFile of rules) {
@@ -96,6 +123,8 @@ export async function applyCommand(_agents: string[]) {
 	const injectedMcpContent = injectEnvVars(rawMcpContent);
 	const fullMcpConfig = JSON.parse(injectedMcpContent);
 
+	const slashCommands = loadSlashCommands(syncDir);
+
 	const rootPersona = config.mergeCommonWithMain
 		? `${mainAgents}\n\n${commonAgents}`.trim()
 		: mainAgents;
@@ -122,7 +151,7 @@ export async function applyCommand(_agents: string[]) {
 			basePersona: rootPersona,
 			rulesContent: rootRulesContent,
 			mcpServers: fullMcpConfig.mcpServers || {},
-			slashCommands: [],
+			slashCommands: slashCommands,
 			skillsSourceDir: path.join(syncDir, "skills"),
 			writtenFiles,
 			includeSkills: true,
