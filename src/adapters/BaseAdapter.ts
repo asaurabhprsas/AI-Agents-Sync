@@ -79,7 +79,12 @@ export abstract class BaseAdapter {
 
 	private buildContent(config: AdapterConfig): string {
 		let content = `${config.basePersona}\n\n${config.rulesContent}`.trim();
-		if (config.slashCommands && config.slashCommands.length > 0) {
+		const includeSlash = config.includeSlashCommands !== false;
+		if (
+			includeSlash &&
+			config.slashCommands &&
+			config.slashCommands.length > 0
+		) {
 			content += "\n\nAvailable Slash Commands:\n";
 			for (const cmd of config.slashCommands) {
 				content += `- /${cmd.name}: ${cmd.description}\n`;
@@ -114,7 +119,7 @@ export abstract class BaseAdapter {
 		} else {
 			fs.writeFileSync(outputPath, content, "utf-8");
 
-			if (this.mcpFile !== null) {
+			if (this.mcpFile !== null && config.includeMcp !== false) {
 				const mcpPath = path.join(config.targetPath, this.mcpFile);
 				fs.mkdirSync(path.dirname(mcpPath), { recursive: true });
 				fs.writeFileSync(
@@ -127,6 +132,7 @@ export abstract class BaseAdapter {
 	}
 
 	private copySkills(config: AdapterConfig): void {
+		if (config.includeSkills === false) return;
 		if (!config.skillsSourceDir || !fs.existsSync(config.skillsSourceDir))
 			return;
 
