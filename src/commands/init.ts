@@ -48,7 +48,6 @@ export async function initCommand(options: { update?: boolean } = {}) {
 			for (const agent of answers.agents) {
 				existingConfig.root[agent] = oldRoot[agent] || {
 					rules: ["default-rules.md"],
-					mcpServers: [],
 				};
 			}
 		}
@@ -91,9 +90,8 @@ export async function initCommand(options: { update?: boolean } = {}) {
 		"# Common Rules\n- Use ESM.\n- Use TypeScript.\n",
 		"utf-8",
 	);
-	fs.mkdirSync(path.join(syncDir, "agents-instruction"), { recursive: true });
 	fs.writeFileSync(
-		path.join(syncDir, "agents-instruction", "default-rules.md"),
+		path.join(syncDir, "agents-md", "default-rules.md"),
 		"- Write clean code.\n- Add tests.\n",
 		"utf-8",
 	);
@@ -103,11 +101,10 @@ export async function initCommand(options: { update?: boolean } = {}) {
 		"utf-8",
 	);
 
-	const rootConfig: Record<string, { rules: string[]; mcpServers: string[] }> =
-		{};
+	const rootConfig: Record<string, { rules: string[] }> = {};
 	if (answers.agents && answers.agents.length > 0) {
 		for (const agent of answers.agents) {
-			rootConfig[agent] = { rules: ["default-rules.md"], mcpServers: [] };
+			rootConfig[agent] = { rules: ["default-rules.md"] };
 		}
 	}
 

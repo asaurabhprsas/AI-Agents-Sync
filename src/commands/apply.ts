@@ -132,10 +132,9 @@ export async function applyCommand(agents: string[]) {
 				continue;
 			}
 
-			const rulesConfig = agentConfig;
 			let rulesContent = "";
-			for (const ruleFile of rulesConfig.rules) {
-				const rulePath = path.join(syncDir, "agents-instruction", ruleFile);
+			for (const ruleFile of agentConfig.rules) {
+				const rulePath = path.join(syncDir, "agents-md", ruleFile);
 				if (fs.existsSync(rulePath)) {
 					rulesContent += `${fs.readFileSync(rulePath, "utf-8")}\n\n`;
 				} else {
@@ -145,24 +144,14 @@ export async function applyCommand(agents: string[]) {
 				}
 			}
 
-			const filteredMcps: Record<string, unknown> = {};
-			const allMcps = fullMcpConfig.mcpServers || {};
-			for (const srv of rulesConfig.mcpServers) {
-				if (allMcps[srv]) {
-					filteredMcps[srv] = allMcps[srv];
-				} else {
-					console.warn(
-						chalk.yellow(`Warning: MCP server ${srv} not found in mcp.json.`),
-					);
-				}
-			}
+			const allMcps: Record<string, unknown> = fullMcpConfig.mcpServers || {};
 
 			adapter.generate({
 				agentName,
 				targetPath,
 				basePersona,
 				rulesContent,
-				mcpServers: filteredMcps,
+				mcpServers: allMcps,
 				slashCommands: slashCommands,
 				skills: skills,
 			});

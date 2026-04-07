@@ -2,7 +2,6 @@ import { z } from "zod";
 
 export const AgentTargetSchema = z.object({
 	rules: z.array(z.string()).optional().default([]),
-	mcpServers: z.array(z.string()).optional().default([]),
 });
 
 export const SyncConfigSchema = z.object({
