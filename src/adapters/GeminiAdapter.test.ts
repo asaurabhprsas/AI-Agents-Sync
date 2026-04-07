@@ -6,63 +6,61 @@ import { GeminiAdapter } from "./GeminiAdapter.js";
 vi.mock("fs");
 
 describe("GeminiAdapter", () => {
-	afterEach(() => {
-		vi.restoreAllMocks();
-	});
+	afterEach(() => vi.restoreAllMocks());
 
-	it("generates .agents structure for Gemini with MCP outside", () => {
-		const adapter = new GeminiAdapter();
-		adapter.generate({
+	function makeConfig(overrides = {}) {
+		return {
 			agentName: "gemini",
 			targetPath: "/mock/path",
 			basePersona: "You are Gemini.",
 			rulesContent: "- Be helpful.",
 			mcpServers: { server1: {} },
 			slashCommands: [],
-			skills: [],
-		});
+			skillsSourceDir: "/mock/.ai-agents-sync/skills",
+			writtenFiles: new Set<string>(),
+			...overrides,
+		};
+	}
 
-		const agentsPath = path.join("/mock/path", ".agents");
-		expect(fs.mkdirSync).toHaveBeenCalledWith(agentsPath, { recursive: true });
+	it("writes AGENTS.md at root with persona and rules", () => {
+		vi.mocked(fs.existsSync).mockReturnValue(false);
+		const adapter = new GeminiAdapter();
+		adapter.generate(makeConfig());
+
 		expect(fs.writeFileSync).toHaveBeenCalledWith(
-			path.join(agentsPath, "AGENTS.md"),
+			path.join("/mock/path", "AGENTS.md"),
 			"You are Gemini.\n\n- Be helpful.",
 			"utf-8",
 		);
+	});
+
+	it("writes MCP to .gemini/mcp.json", () => {
+		vi.mocked(fs.existsSync).mockReturnValue(false);
+		const adapter = new GeminiAdapter();
+		adapter.generate(makeConfig());
+
 		expect(fs.writeFileSync).toHaveBeenCalledWith(
-			path.join("/mock/path", "mcp.json"),
+			path.join("/mock/path", ".gemini/mcp.json"),
 			expect.stringContaining('"server1"'),
 			"utf-8",
 		);
 	});
 
-	it("generates AGENTS.md with slash commands", () => {
+	it("does not write AGENTS.md twice to the same path", () => {
+		vi.mocked(fs.existsSync).mockReturnValue(false);
 		const adapter = new GeminiAdapter();
-		adapter.generate({
-			agentName: "gemini",
-			targetPath: "/mock/path",
-			basePersona: "You are Gemini.",
-			rulesContent: "- Write tests.",
-			mcpServers: {},
-			slashCommands: [
-				{ name: "refactor", description: "Refactor code", content: "..." },
-			],
-			skills: [],
-		});
+		const writtenFiles = new Set<string>();
+		adapter.generate(makeConfig({ writtenFiles }));
+		adapter.generate(makeConfig({ writtenFiles }));
 
-		const agentsPath = path.join("/mock/path", ".agents");
-		expect(fs.writeFileSync).toHaveBeenCalledWith(
-			path.join(agentsPath, "AGENTS.md"),
-			expect.stringContaining(
-				"Available Slash Commands:\n- /refactor: Refactor code",
-			),
-			"utf-8",
-		);
+		const agentsMdCalls = vi
+			.mocked(fs.writeFileSync)
+			.mock.calls.filter(([p]) => String(p).endsWith("AGENTS.md"));
+		expect(agentsMdCalls).toHaveLength(1);
 	});
 
-	it("reports full capabilities", () => {
+	it("reports partial .agents support", () => {
 		const adapter = new GeminiAdapter();
 		expect(adapter.capabilities.agentsFolderSupport).toBe("partial");
-		expect(adapter.capabilities.unsupportedFeatures).toContain("mcp");
 	});
 });

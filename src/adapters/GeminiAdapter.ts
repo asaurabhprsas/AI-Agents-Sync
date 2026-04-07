@@ -5,14 +5,14 @@ import type {
 import { BaseAdapter } from "./BaseAdapter.js";
 
 export class GeminiAdapter extends BaseAdapter {
-	readonly outputFile = ".agents/AGENTS.md";
+	readonly outputFile = "AGENTS.md";
 	readonly outputFormat = "text" as const;
-	readonly instructionsKey = ""; // unused for text format
+	readonly instructionsKey = "";
 	readonly mcpKey = "mcpServers";
-	readonly mcpFile = "mcp.json"; // separate file outside .agents/
-	readonly skillDir = ".agents/skills";
+	readonly mcpFile = ".gemini/mcp.json";
+	readonly skillDir = ".gemini/skills";
+	readonly agentDir = ".gemini";
+	readonly gitignoreOutputFile = false;
 	readonly agentsFolderSupport: AgentsFolderSupport = "partial";
-	readonly unsupportedFeatures: AdapterCapabilities["unsupportedFeatures"] = [
-		"mcp",
-	];
+	readonly unsupportedFeatures: AdapterCapabilities["unsupportedFeatures"] = [];
 }
