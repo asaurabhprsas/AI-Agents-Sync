@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { AgentTargetSchema, SyncConfigSchema } from "./schema.js";
+import {
+	AgentTargetSchema,
+	SyncConfigSchema,
+	type AdapterConfig,
+} from "./schema.js";
 
 describe("Schema", () => {
 	it("AgentTargetSchema should parse correctly with rules", () => {
@@ -27,5 +31,24 @@ describe("Schema", () => {
 		expect(result.defaultAgents).toContain("gemini");
 		expect(result.root?.rules).toContain("default-rules.md");
 		expect(result.workspaces["apps/web"]?.rules).toContain("frontend-rules.md");
+	});
+
+	it("AdapterConfig should allow optional include fields", () => {
+		const config: AdapterConfig = {
+			agentName: "test-agent",
+			targetPath: "/test/path",
+			basePersona: "test persona",
+			rulesContent: "test rules",
+			mcpServers: {},
+			slashCommands: [],
+			skillsSourceDir: "/test/skills",
+			writtenFiles: new Set(),
+			includeSkills: false,
+			includeMcp: false,
+			includeSlashCommands: false,
+		};
+		expect(config.includeSkills).toBe(false);
+		expect(config.includeMcp).toBe(false);
+		expect(config.includeSlashCommands).toBe(false);
 	});
 });

@@ -31,6 +31,12 @@ export interface AdapterConfig {
 	skillsSourceDir: string;
 	/** Tracks files already written in this run to avoid duplicate writes */
 	writtenFiles: Set<string>;
+	/** Whether to copy skills to target (default true) */
+	includeSkills?: boolean;
+	/** Whether to write MCP file (default true) */
+	includeMcp?: boolean;
+	/** Whether to include slash commands in content (default true) */
+	includeSlashCommands?: boolean;
 }
 
 export type AgentsFolderSupport = "full" | "partial" | "none";
