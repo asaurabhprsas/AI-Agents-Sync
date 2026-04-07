@@ -109,8 +109,10 @@ export abstract class BaseAdapter {
 		if (this.outputFormat === "json") {
 			const jsonOutput: Record<string, unknown> = {
 				[this.instructionsKey]: content,
-				[this.mcpKey]: config.mcpServers,
 			};
+			if (config.includeMcp !== false) {
+				jsonOutput[this.mcpKey] = config.mcpServers;
+			}
 			fs.writeFileSync(
 				outputPath,
 				JSON.stringify(jsonOutput, null, 2),
